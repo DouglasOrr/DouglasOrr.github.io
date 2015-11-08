@@ -50,11 +50,10 @@
 
       <!-- Main content -->
       <div class="container">
-
         {{ content }}
-
       </div>
 
+      <!-- Footer -->
       <div id="footer" class="container">
         <div class="panel panel-default">
           <div class="panel-heading">
@@ -71,6 +70,13 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="container">
+        {% if page.comments %}
+        {% include comments.html %}
+        {% endif %}
       </div>
     </body>
 </html>

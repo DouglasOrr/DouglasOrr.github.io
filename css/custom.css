@@ -1,6 +1,7 @@
 /* "Written by..." footer */
 #footer {
-    margin-top: 8em;
+    margin-top: 6em;
+    margin-bottom: 2em;
 }
 .contact-img {
     float: left;

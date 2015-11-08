@@ -4,6 +4,7 @@ title: "Why Git is brilliant!"
 date: 2015-11-06
 categories: abstraction
 tags: git abstraction
+comments: true
 ---
 
 Git is a brilliant piece of software.
