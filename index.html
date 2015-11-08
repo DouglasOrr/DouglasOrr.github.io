@@ -1,13 +1,15 @@
 ---
 layout: default
-title: Your New Jekyll Site
+title: Doug's Diversions
 ---
 
 <div id="home">
-  <h1>Blog Posts</h1>
-  <ul class="posts">
+  <h1>Doug's Diversions</h1>
+  <p class="subtitle">My loose collection of diversions/essays, largely about software engineering.</p>
+  <dl class="dl-horizontal bloglist">
     {% for post in site.posts %}
-      <li><span>{{ post.date | date_to_string }}</span> &raquo; <a href="{{ post.url }}">{{ post.title }}</a></li>
+      <dt>{{ post.date | date_to_string }}</dt>
+      <dd><a href="{{ post.url }}">{{ post.title }}</a></dd>
     {% endfor %}
-  </ul>
+  </dl>
 </div>

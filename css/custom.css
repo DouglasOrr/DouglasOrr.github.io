@@ -1,0 +1,39 @@
+/* "Written by..." footer */
+#footer {
+    margin-top: 8em;
+}
+.contact-img {
+    float: left;
+}
+.contact-img img {
+    display: block;
+    width: 80px;
+    height: 80px;
+}
+.contact-text {
+    margin-left: 120px;
+}
+
+/* Index */
+.bloglist dt {
+    color: #aaa;
+}
+.bloglist dd {
+    font-size: large;
+    margin-bottom: 1em;
+    font-family: sans;
+}
+
+/* Post */
+.title-tags {
+    float: right;
+}
+
+/* General */
+blockquote p {
+    font-size: medium;
+}
+.subtitle {
+    margin-bottom: 2em;
+    color: #777;
+}
