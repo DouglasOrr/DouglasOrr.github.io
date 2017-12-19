@@ -1,4 +1,4 @@
 name: Doug's Diversions
 markdown: kramdown
-pygments: true
+highlighter: rouge
 url: https://douglasorr.github.io
