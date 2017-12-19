@@ -1,2 +1,2 @@
-FROM ruby:2.0-onbuild
-CMD bundle exec jekyll serve
+FROM ruby:2.3-onbuild
+CMD bundle exec jekyll serve -H 0.0.0.0

@@ -1,4 +1,4 @@
 name: Doug's Diversions
-markdown: redcarpet
+markdown: kramdown
 pygments: true
 url: https://douglasorr.github.io

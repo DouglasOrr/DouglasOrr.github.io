@@ -23,6 +23,11 @@ We include the following dependencies:
     http://getbootstrap.com/ - Bootstrap (javascript)
     https://jquery.com/download/ - JQuery
 
+To update the Ruby dependencies, run:
+
+     docker run --rm -it -v `pwd`:/work -w /work blog \
+         bash -c "bundle config frozen false && bundle update"
+
 ## Resources
 
  - [Jekyll](http://jekyllrb.com/)
