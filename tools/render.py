@@ -21,22 +21,12 @@ class DougExtension(markdown.extensions.Extension):
 if __name__ == '__main__':
     src_root = 'src'
     site_root = 'site'
+
     logging.basicConfig(level=logging.INFO)
     os.makedirs(site_root, exist_ok=True)
+    md = markdown.Markdown(extensions=[DougExtension()])
     for src in glob.glob(f'{src_root}/*.md'):
         src_name = os.path.splitext(os.path.relpath(src, src_root))[0]
         dest = os.path.join(site_root, f'{src_name}.html')
         logging.info(f'{src} => {dest}')
-        markdown.markdownFromFile(
-            input=src,
-            output=dest,
-            extensions=[DougExtension()]
-        )
-
-# print(markdown.markdown("""
-# # Title
-
-# Some [custom link](foo.md).
-
-# [Another link](bar/baz.md).
-# """, extensions=[DougExtension()]))
+        md.convertFile(src, dest)
