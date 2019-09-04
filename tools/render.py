@@ -21,9 +21,14 @@ class DougExtension(markdown.extensions.Extension):
 if __name__ == '__main__':
     src_root = 'src'
     site_root = 'site'
-
     logging.basicConfig(level=logging.INFO)
-    os.makedirs(site_root, exist_ok=True)
+
+    # Clean
+    for old in glob.glob(f'{site_root}/*.html'):
+        logging.info(f'remove {old}')
+        os.remove(old)
+
+    # Build
     md = markdown.Markdown(extensions=[DougExtension()])
     for src in glob.glob(f'{src_root}/*.md'):
         src_name = os.path.splitext(os.path.relpath(src, src_root))[0]

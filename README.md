@@ -2,8 +2,10 @@
 
 Doug's personal website.
 
-## Editing & rebuilding the site
+## Building the site
 
- 1. Add or edit an article in `src/`
- 2. If needed, update `src/index.md`
- 3. Run `./tools/build.sh`
+ 1. `git clone --recurse-submodules --branch source git@github.com:DouglasOrr/DouglasOrr.github.io.git`
+ 2. Add or edit an article in `src/`
+ 3. If needed, update `src/index.md`
+ 4. Run `./tools/build.sh`
+ 5. If happy with the results, commit & push both `site/` & `source/`
