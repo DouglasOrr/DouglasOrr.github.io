@@ -2,8 +2,4 @@
 
 Doug's personal website.
 
-## Editing & rebuilding the site
-
- 1. Add or edit an article in `src/`
- 2. If needed, update `src/index.md`
- 3. Run `./tools/build.sh`
+To edit & publish this site, please use the [`source`](https://github.com/DouglasOrr/DouglasOrr.github.io/tree/source) branch.
