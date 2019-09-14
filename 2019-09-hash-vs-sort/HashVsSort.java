@@ -27,9 +27,6 @@ public class HashVsSort {
     }
 
     private static int[] sortUnique(int[] items) {
-        if (items.length == 0) {
-            return items;
-        }
         int[] sorted = Arrays.copyOf(items, items.length);
         Arrays.sort(sorted);
         int writeIndex = 1;
