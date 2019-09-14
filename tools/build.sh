@@ -1,13 +1,14 @@
-TOOLS_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
-echo $TOOLS_DIR
 set -e
 
-(git -C site fetch && git -C site reset --hard origin/master) || git clone git@github.com:DouglasOrr/DouglasOrr.github.io.git site/
+TOOLS_DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
+SITE="site"
 
-docker build --rm -t pages-douglasorr "$TOOLS_DIR"
+(git -C "${SITE}" fetch && git -C "${SITE}" reset --hard origin/master) || git clone git@github.com:DouglasOrr/DouglasOrr.github.io.git "${SITE}"
 
-docker run --rm -it -v "$(dirname $TOOLS_DIR)":/work -w /work --user "$(id -u):$(id -g)" \
+docker build --rm -t pages-douglasorr "${TOOLS_DIR}"
+
+docker run --rm -it -v "$(dirname ${TOOLS_DIR})":/work -w /work --user "$(id -u):$(id -g)" \
        pages-douglasorr \
-       python3 tools/render.py
+       python3 tools/render.py src/ "${SITE}"
 
-git -C site add . && git -C site commit -m 'Publish'
+git -C "${SITE}" add . && git -C "${SITE}" commit -m 'Publish'

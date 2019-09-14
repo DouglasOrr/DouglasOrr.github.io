@@ -9,3 +9,9 @@ Doug's personal website.
  1. If needed, update `src/index.md`
  1. Run `./tools/build.sh`
  1. If happy with `site/`: `git -C site push`
+
+## Developing the site
+
+```sh
+./tools/build_debug.sh
+```

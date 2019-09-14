@@ -1,5 +1,8 @@
 .ipynb_checkpoints
+__pycache__
 
 /data
-/site
 /examples
+/local
+/site
+/site_debug
