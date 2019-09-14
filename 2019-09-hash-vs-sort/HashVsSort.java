@@ -68,7 +68,7 @@ public class HashVsSort {
         Random random = new Random();
         System.out.println("n_total,n_unique,method,time");
         for (int rep = 0; rep < 30; ++rep) {
-            for (int logTotal : Arrays.asList(16, 18, 20, 22)) {
+            for (int logTotal : Arrays.asList(8, 12, 16, 20, 24)) {
                 for (float uniqueRatio : Arrays.asList(1/16.0f, 1/2.0f, 1.0f)) {
                     int[] items = generateTestItems(1 << logTotal, uniqueRatio, random);
                     // Swap order each rep, for fairness

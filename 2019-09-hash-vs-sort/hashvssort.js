@@ -44,7 +44,7 @@ function generate_test_items(n_total, unique_ratio) {
 
 console.log("n_total,n_unique,method,time");
 for (var rep = 0; rep < 30; ++rep) {
-    for (let log_total of [16, 18, 20, 22]) {
+    for (let log_total of [8, 12, 16, 20, 24]) {
         for (let unique_ratio of [1/16, 1/2, 1]) {
             let items = generate_test_items(1 << log_total, unique_ratio);
             for (let uniquer of [hash_unique, sort_unique]) {
