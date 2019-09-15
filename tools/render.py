@@ -1,13 +1,15 @@
 import argparse
+import glob
 import inotify.adapters
 import logging
 import markdown
 import os
 import re
 import shutil
+import urllib.request
 
 
-class ResolveLinks(markdown.treeprocessors.Treeprocessor):
+class ResolveLinksProcessor(markdown.treeprocessors.Treeprocessor):
     def run(self, root):
         for link in root.iter('a'):
             href = link.attrib['href']
@@ -15,16 +17,88 @@ class ResolveLinks(markdown.treeprocessors.Treeprocessor):
                 link.attrib['href'] = re.sub('.md$', '.html', href)
 
 
-class DougExtension(markdown.extensions.Extension):
+class ResolveLinksExtension(markdown.extensions.Extension):
     def extendMarkdown(self, md):
-        md.treeprocessors.register(ResolveLinks(md), 'resolve_links', 20)
+        md.treeprocessors.register(ResolveLinksProcessor(md), 'resolve_links', 20)
+
+
+class Rule:
+    """A rule can be asked to build or delete a single target file in the output."""
+    def __init__(self, target):
+        self.target = target
+
+    def delete_target(self):
+        if os.path.isfile(self.target):
+            logging.info(f'delete {self.target}')
+            os.remove(self.target)
+        else:
+            logging.warning(f'cannot delete {self.target} - not a file')
+
+    def build_target(self):
+        os.makedirs(os.path.dirname(self.target), exist_ok=True)
+        self._build()
+
+    def _build(self):
+        raise NotImplementedError
+
+    def __eq__(self, other):
+        return isinstance(other, Rule) and other.target == self.target
+
+    def __hash__(self):
+        return hash(self.target)
+
+    def __lt__(self, other):
+        return self.target < other.target
+
+
+class CopyRule(Rule):
+    def __init__(self, target, source):
+        super().__init__(target)
+        self.source = source
+
+    def _build(self):
+        logging.info(f'copy {self.source} => {self.target}')
+        shutil.copyfile(self.source, self.target)
+
+
+class RenderRule(Rule):
+    MARKDOWN = markdown.Markdown(extensions=[ResolveLinksExtension(), 'meta'])
+
+    def __init__(self, target, source, template):
+        super().__init__(target)
+        self.source = source
+        self.template = template
+
+    def _build(self):
+        logging.info(f'render {self.source} => {self.target}')
+        with open(self.template, encoding='utf-8') as template_f:
+            template = template_f.read()
+        with open(self.source, encoding='utf-8') as source_f:
+            body = self.MARKDOWN.convert(source_f.read())
+        title = ' '.join(self.MARKDOWN.Meta['title'])
+        html = template.replace('{{title}}', title).replace('{{body}}', body)
+        with open(self.target, 'w', encoding='utf-8') as target_f:
+            target_f.write(html)
+
+
+class DownloadRule(Rule):
+    def __init__(self, target, source):
+        super().__init__(target)
+        self.source = source
+
+    def _build(self):
+        logging.info(f'download {self.source} => {self.target}')
+        urllib.request.urlretrieve(self.source, self.target)
 
 
 class Builder:
     DEST_NOCLEAN = {'.git', 'README.md', 'server.log'}
+    DEST_LIBS = [
+        ('lib/bootstrap.css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'),
+    ]
+    SRC_TEMPLATE = 'template.html'
     SRC_IGNORE = {'.ipynb_checkpoints'}
-    SRC_COPY = {'img'}
-    MARKDOWN = markdown.Markdown(extensions=[DougExtension()])
+    SRC_COPY = {'img', 'custom'}
 
     class Error(Exception):
         def __init__(self, path, description):
@@ -39,33 +113,26 @@ class Builder:
         parts = path.split(os.path.sep)
         return any(part in self.SRC_IGNORE for part in parts) or parts[-1].startswith('.#')
 
-    def _update_file(self, path):
-        src = os.path.join(self.src_root, path)
-        if self._check_ignore(path):
-            logging.info(f'ignore {src}')
-            return
-        dest = os.path.join(self.dest_root, path)
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        parts = path.split(os.path.sep)
-        if any(part in self.SRC_COPY for part in parts):
-            logging.info(f'copy {src} => {dest}')
-            shutil.copyfile(src, dest)
-        elif parts[-1].endswith('.md'):
-            dest_html = dest.replace('.md', '.html')
-            logging.info(f'render {src} => {dest_html}')
-            self.MARKDOWN.convertFile(src, dest_html)
-        else:
-            raise self.Error(src, 'missing build rule')
+    def _src_to_dest(self, src):
+        return os.path.join(self.dest_root, os.path.relpath(src, self.src_root))
 
-    def _delete_file(self, path):
-        if self._check_ignore(path):
-            return
-        dest = os.path.join(self.dest_root, path)
-        if os.path.isfile(dest):
-            logging.info(f'delete {dest}')
-            os.remove(dest)
-        else:
-            raise self.Error(dest, 'cannot delete - not a file')
+    def _render_rule(self, src):
+        dest = self._src_to_dest(src).replace('.md', '.html')
+        return RenderRule(dest, src, template=os.path.join(self.src_root, self.SRC_TEMPLATE))
+
+    def _get_rules(self, src):
+        """Gets the set of rules that apply from this source path."""
+        if self._check_ignore(src):
+            logging.info(f'ignore {src}')
+            return set([])
+        parts = src.split(os.path.sep)
+        if any(part in self.SRC_COPY for part in parts):
+            return {CopyRule(self._src_to_dest(src), src)}
+        if parts[-1].endswith('.md'):
+            return {self._render_rule(src)}
+        if os.path.relpath(src, self.src_root) == self.SRC_TEMPLATE:
+            return {self._render_rule(src) for src in glob.glob(f'{self.src_root}/**/*.md', recursive=True)}
+        raise self.Error(src, 'missing build rule')
 
     def clean(self):
         os.makedirs(self.dest_root, exist_ok=True)
@@ -80,20 +147,30 @@ class Builder:
 
     def rebuild(self):
         self.clean()
+        rules = set([])
+        # Add rules for each file in the source tree
         for parent, _, files in os.walk(self.src_root):
             for file in files:
-                self._update_file(os.path.relpath(os.path.join(parent, file), self.src_root))
+                rules |= self._get_rules(os.path.join(parent, file))
+        # Add library rules
+        for target, source in self.DEST_LIBS:
+            rules |= {DownloadRule(os.path.join(self.dest_root, target), source)}
+        # Run all the rules
+        for rule in sorted(rules):
+            rule.build_target()
 
     def watch(self):
         events = inotify.adapters.InotifyTree(self.src_root).event_gen(yield_nones=False)
         for _, types, parent, name in events:
             try:
                 if 'IN_ISDIR' not in types:
-                    path = os.path.relpath(os.path.join(parent, name), self.src_root)
+                    src = os.path.join(parent, name)
                     if 'IN_CLOSE_WRITE' in types:
-                        self._update_file(path)
+                        for rule in self._get_rules(src):
+                            rule.build_target()
                     if 'IN_DELETE' in types:
-                        self._delete_file(path)
+                        for rule in self._get_rules(src):
+                            rule.delete_target()
             except self.Error as e:
                 logging.error(e)
 
