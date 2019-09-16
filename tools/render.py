@@ -1,5 +1,6 @@
 import argparse
 import glob
+import html
 import inotify.adapters
 import logging
 import markdown
@@ -9,7 +10,8 @@ import shutil
 import urllib.request
 
 
-class ResolveLinksProcessor(markdown.treeprocessors.Treeprocessor):
+class RenameLinksProcessor(markdown.treeprocessors.Treeprocessor):
+    """Rename markdown links to HTML ones."""
     def run(self, root):
         for link in root.iter('a'):
             href = link.attrib['href']
@@ -17,9 +19,36 @@ class ResolveLinksProcessor(markdown.treeprocessors.Treeprocessor):
                 link.attrib['href'] = re.sub('.md$', '.html', href)
 
 
-class ResolveLinksExtension(markdown.extensions.Extension):
+class PrismFencedBlockPreprocessor(markdown.preprocessors.Preprocessor):
+    LANGUAGE_NAME_MAP = {'c++': 'cpp'}
+    BLOCK = re.compile(r'```(?P<language>[^\n]*)\n(?P<code>.+?)\n```',
+                       flags=re.MULTILINE | re.DOTALL)
+
+    def _replace(self, m):
+        language = m.group('language')
+        clazz = 'language-' + (self.LANGUAGE_NAME_MAP.get(language, language) or 'none')
+        code = html.escape(m.group('code'))
+        return self.md.htmlStash.store(f'<pre><code class="{clazz}">{code}</code></pre>')
+
+    def run(self, lines):
+        return self.BLOCK.sub(self._replace, '\n'.join(lines)).split('\n')
+
+
+class BootstrapProcessor(markdown.treeprocessors.Treeprocessor):
+    """Set bootstrap styling classes."""
+    def run(self, root):
+        for element in root.iter('table'):
+            element.attrib['class'] = 'table'
+        for element in root.iter('img'):
+            element.attrib['class'] = 'img-fluid'
+
+
+class DougsDiversionsExtension(markdown.extensions.Extension):
+    """Custom extension for this site."""
     def extendMarkdown(self, md):
-        md.treeprocessors.register(ResolveLinksProcessor(md), 'resolve_links', 20)
+        md.preprocessors.register(PrismFencedBlockPreprocessor(md), 'prism_fenced_code', 26)
+        md.treeprocessors.register(RenameLinksProcessor(md), 'rename_links', 19)
+        md.treeprocessors.register(BootstrapProcessor(md), 'custom_style', 18)
 
 
 class Rule:
@@ -62,7 +91,11 @@ class CopyRule(Rule):
 
 
 class RenderRule(Rule):
-    MARKDOWN = markdown.Markdown(extensions=[ResolveLinksExtension(), 'meta'])
+    MARKDOWN = markdown.Markdown(extensions=[
+        DougsDiversionsExtension(),
+        'meta',
+        'tables',
+    ])
 
     def __init__(self, target, source, template):
         super().__init__(target)
@@ -82,23 +115,33 @@ class RenderRule(Rule):
 
 
 class DownloadRule(Rule):
-    def __init__(self, target, source):
+    def __init__(self, target, sources):
         super().__init__(target)
-        self.source = source
+        self.sources = sources
 
     def _build(self):
-        logging.info(f'download {self.source} => {self.target}')
-        urllib.request.urlretrieve(self.source, self.target)
+        logging.info(f'download {" + ".join(self.sources)} => {self.target}')
+        with open(self.target, 'wb') as target_f:
+            for source in self.sources:
+                with urllib.request.urlopen(source) as response:
+                    target_f.write(response.read())
 
 
 class Builder:
     DEST_NOCLEAN = {'.git', 'README.md', 'server.log'}
     DEST_LIBS = [
-        ('lib/bootstrap.css', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'),
+        ('css/lib.css',
+         ['https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css',
+          'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/themes/prism.min.css']),
+        ('js/lib.js',
+         ['https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/prism.min.js'] +
+         [f'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-{language}.min.js'
+          for language in ['clike', 'javascript', 'c', 'cpp', 'java']]),
     ]
     SRC_TEMPLATE = 'template.html'
     SRC_IGNORE = {'.ipynb_checkpoints'}
-    SRC_COPY = {'img', 'custom'}
+    SRC_COPY = {'.png', '.svg', '.css', '.js'}
 
     class Error(Exception):
         def __init__(self, path, description):
@@ -125,10 +168,10 @@ class Builder:
         if self._check_ignore(src):
             logging.info(f'ignore {src}')
             return set([])
-        parts = src.split(os.path.sep)
-        if any(part in self.SRC_COPY for part in parts):
+        ext = os.path.splitext(src)[1]
+        if ext in self.SRC_COPY:
             return {CopyRule(self._src_to_dest(src), src)}
-        if parts[-1].endswith('.md'):
+        if ext == '.md':
             return {self._render_rule(src)}
         if os.path.relpath(src, self.src_root) == self.SRC_TEMPLATE:
             return {self._render_rule(src) for src in glob.glob(f'{self.src_root}/**/*.md', recursive=True)}
@@ -154,7 +197,8 @@ class Builder:
                 rules |= self._get_rules(os.path.join(parent, file))
         # Add library rules
         for target, source in self.DEST_LIBS:
-            rules |= {DownloadRule(os.path.join(self.dest_root, target), source)}
+            rules |= {DownloadRule(os.path.join(self.dest_root, target),
+                                   [source] if isinstance(source, str) else source)}
         # Run all the rules
         for rule in sorted(rules):
             rule.build_target()
