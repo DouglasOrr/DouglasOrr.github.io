@@ -41,6 +41,8 @@ class BootstrapProcessor(markdown.treeprocessors.Treeprocessor):
             element.attrib['class'] = 'table'
         for element in root.iter('img'):
             element.attrib['class'] = 'img-fluid'
+        for element in root.iter('blockquote'):
+            element.attrib['class'] = 'blockquote'
 
 
 class DougsDiversionsExtension(markdown.extensions.Extension):
