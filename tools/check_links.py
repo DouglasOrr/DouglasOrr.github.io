@@ -58,19 +58,19 @@ def check_links(root):
         for path, _, files in os.walk(root)
         for file in files
     }
-    missing = []
+    broken = []
     for file_name in site_files:
         if os.path.splitext(file_name)[-1] == '.html':
             path = os.path.join(root, file_name)
             for link in LinkCheckParser.get_links(path):
                 if not check_link(link, file_name, site_files):
-                    missing.append(link)
-    if missing:
-        print('Links missing:')
-        for link in missing:
+                    broken.append(link)
+    if broken:
+        print('Error! broken links:')
+        for link in broken:
             print(f'    <{link.tag} {link.attr}="{link.href}">,'
                   f' in {link.path}, line {link.line} column {link.column}')
-    return len(missing)
+    return len(broken)
 
 
 if __name__ == '__main__':

@@ -11,4 +11,8 @@ docker run --rm -it -v "$(dirname ${TOOLS_DIR})":/work -w /work --user "$(id -u)
        pages-douglasorr \
        python3 tools/render.py src/ "${SITE}"
 
+docker run --rm -it -v "$(dirname ${TOOLS_DIR})":/work -w /work --user "$(id -u):$(id -g)" \
+       pages-douglasorr \
+       python3 tools/check_links.py "${SITE}"
+
 git -C "${SITE}" add . && git -C "${SITE}" commit -m 'Publish'
