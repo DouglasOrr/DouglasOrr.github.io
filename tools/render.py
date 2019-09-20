@@ -97,6 +97,7 @@ class RenderRule(Rule):
         DougsDiversionsExtension(),
         'meta',
         'tables',
+        'toc',
     ])
 
     def __init__(self, target, source, template):
