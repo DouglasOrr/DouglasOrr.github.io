@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Douglas Orr">
+    <meta name="keywords" content="C++,unique,distinct,deduplication,hashset">
+    <link rel="stylesheet" href="/css/lib.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Hash vs Sort</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col">
+          <h1 id="finding-unique-items-hash-vs-sort">Finding unique items - hash vs sort?</h1>
+<p><strong>[Part 1]</strong>, <a href="../2019-09-hash-vs-sort-2/article.html">[Part 2]</a></p>
+<p>A while back, I was trying to speed up some code which finds unique items in a collection. For example, transforming <code>"AABBADCAB" =&gt; "ABDC"</code>. There are two ways to do this efficiently - one is based on sorting, the other based on hashing. So, <em>which is faster?</em> I couldn't find the answer, so I ran some experiments and here are the results.</p>
+<p>We'll start with C++, but we'll see if these results generalise to a couple of other popular languages in part 2. We'll begin by specifying the problem more precisely.</p>
+<p><strong>The problem:</strong> given an array of values, create a new array of all unique values from the original (in any order). This means that for each value in the original array there is exactly one value in the uniqued result that would compare equal. For example (in C++; we'll use a <code>std::vector</code> for the input and output type):</p>
+<pre><code class="language-cpp">auto items = std::vector&lt;int&gt;{10, 20, 20, 30, 10, 10};
+auto results = find_unique(items);
+// =&gt; {10, 20, 30}
+// (or {20, 10, 30}, etc.)</code></pre>
+
+<p>Although it's a very simple problem, I found the benchmarking results a bit surprising - investigating this has changed my mental model of what makes code fast or slow.</p>
+<h2 id="how-to-find-unique-items-sorting">How to find unique items - sorting</h2>
+<p>Both methods are based on the same idea: we need to collect identical items together in the same place, so we know where to look for the duplicates. One way to do this is to <strong>sort</strong> the items, after which any duplicates will now be adjacent, so we can make a second pass to scan through, removing adjacent duplicates. It looks a bit like this:</p>
+<p><img alt="sort then copy to find unique items" class="img-fluid" src="img/sort_unique.svg" /></p>
+<p>The first step is any standard sorting algorithm (e.g. <a href="https://en.wikipedia.org/wiki/Quicksort">quicksort</a>). The second step is a linear scan which keeps track of the last item copied into the result as it scans through the array, and doesn't copy an item to the result if it compares equal to the last item. The C++ code to implement <em>sort-unique</em> is simple (mainly because <a href="https://en.cppreference.com/w/cpp/algorithm/unique"><code>std::unique</code></a> already exists to implement step 2):</p>
+<p><strong>sort-unique</strong>
+<pre><code class="language-cpp">auto results = items;
+std::sort(results.begin(), results.end());
+auto n = std::unique(results.begin(), results.end()) - results.begin();
+results.resize(n);</code></pre></p>
+<p>Since we're interested in the runtime performance of our code, we can use <a href="https://en.wikipedia.org/wiki/Big_O_notation">Big O notation</a> to try give a very rough model of how runtime will scale with data size. In Big-O, <em>sort-unique</em> takes $O(N)$ memory (although it can also be done in-place) and $O(N \log N)$ compute (e.g. if you count comparisons or data movement), due to the sort.</p>
+<h2 id="how-to-find-unique-items-hashing">How to find unique items - hashing</h2>
+<p>Another way to collect identical items together is to <strong>hash</strong> them, so we only have to check items that collide hash buckets to confirm that an item is new. This looks like:</p>
+<p><img alt="hash then copy to find unique items" class="img-fluid" src="img/hash_unique.svg" /></p>
+<p>In C++, you can implement <em>hash-unique</em> by copying the collection into a <a href="https://en.cppreference.com/w/cpp/container/unordered_set"><code>std::unordered_set</code></a> and back out again:</p>
+<p><strong>hash-unique</strong>
+<pre><code class="language-cpp">std::unordered_set&lt;T&gt; set(items.begin(), items.end());
+std::vector&lt;T&gt; results(set.begin(), set.end());</code></pre></p>
+<p>Again in Big-O, <em>hash-unique</em> takes $O(N)$ memory and $O(N)$ compute (counting <code>std::hash</code> calls, or bucket accesses). So it looks like hashing is going to be our winner - <em>let's see it's actually faster...</em></p>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>It isn't immediately obvious whether <em>sort-unique</em> or <em>hash-unique</em> would be faster for our performance-critical code. Our simple analysis (based on the number of copies, <code>operator&lt;</code> or <code>std::hash</code> calls) said <em>sort-unqiue</em> was $O(N \log N)$ and <em>hash-unique</em> was $O(N)$, but you can't beat actually trying it out. Therefore let's try benchmarking these methods over some example inputs. We'll test things out using C++ to unique vectors of randomly sampled integers with the following variants:</p>
+<ul>
+<li>Total number of items: {$2^6$ .. $2^{24}$}</li>
+<li>Proportion of items that are unique: {$\frac{1}{16}$, $\frac{1}{4}$, $\frac{1}{2}$, $\frac{3}{4}$, $1$}</li>
+<li>Data size: {1, 2, 4, 8} bytes</li>
+</ul>
+<p>Although it's unlikely any of these configurations will match any of our real problems, they should help show the trade-offs between the two approaches. Our performance results are all the median latency over 60 runs on an Ubuntu laptop <sup><a href="#appendix-benchmarking">[Appendix 1]</a></sup>. We also separately instrument the objects in the collection to count data-oriented operations (construct, copy, assign) and logical operations (<code>operator&lt;</code>, <code>operator==</code>, <code>std::hash</code>).</p>
+<p>Here's a typical result: 1 million items, 50% unique, using <code>int32</code>:</p>
+<table class="table">
+<thead>
+<tr>
+<th>method</th>
+<th>time per item</th>
+<th>data ops per item</th>
+<th>logic ops per item</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>sort-unique</em></td>
+<td>125 ns</td>
+<td>17.9</td>
+<td>24.7</td>
+</tr>
+<tr>
+<td><em>hash-unique</em></td>
+<td>193 ns</td>
+<td>1.00</td>
+<td>1.50</td>
+</tr>
+</tbody>
+</table>
+<p>In this instance, <em>sort-unique</em> is slightly faster than <em>hash-unique</em>, even though <em>sort-unique</em> is doing many more data operations (mainly move &amp; move-assign), and logical operations (less). Clearly the bottleneck here for <em>hash-unique</em> isn't the object's operations - probably memory allocation and locality of access should be our top suspects for this hidden cost, but more on that later.</p>
+<p>Things become more interesting when we look at trends:</p>
+<p><img alt="Performance scaling of hash-unique and sort-unique by total number of items" class="img-fluid" src="img/chart_total_items.png" /></p>
+<p>Here we can see how performance degrades as we scale the total number of items being uniqued, while keeping the data type fixed (<code>int32</code>) and the proportion of unique items fixed (50%). We can see that <em>sort-unique</em> is faithfully obeying $O(N \log N)$ for execution time - this means that the time per item is $O(\log N)$, or a straight line on the graph above (as the x-axis is logarithmic). The runtime of <em>hash-unique</em> is a bit more interesting - there the runtime gets much worse approaching 1 million total items (each of which is 4 bytes), which is suspiciously close to my test machine's 4 MB of L3 cache.</p>
+<p>We can also look at how the proportion of unique items affects performance:</p>
+<p><img alt="Performance scaling of hash-unique and sort-unique by ratio of unique items" class="img-fluid" src="img/chart_unique_ratio.png" /></p>
+<p>Here we see how strongly <em>hash-unique</em> depends on the ratio of unique to total items (unique ratio = $N_{unique}/N$), whereas <em>sort-unique</em> doesn't seem to care. This is because the size of the hash set that <em>hash-unique</em> maintains scales with the number of unique items, not the total number of items, whereas the first pass of <em>sort-unique</em>, which dominates the workload, does not gain an advantage from duplicate items.</p>
+<p>Finally, we didn't find that data size made much difference to performance. Small data types (e.g. <code>uint16</code>) were slightly faster for <em>hash-unique</em>, but the difference was marginal.</p>
+<h3 id="analysis">Analysis</h3>
+<p>Altogether, the runtime of <em>sort-unique</em> followed the trend we expected, $O(N \log N)$, and was independent of the ratio of unique items. <em>Hash-unique</em>, however, takes more time for each unique item, and the runtime jumps when the hash table begins to spill out of L3 cache to main memory (our expected trend of $O(N)$ was a very poor fit to the data).</p>
+<p>To check these observations, we tried to fit a linear predictive model to the runtime, with the features $\left[1, N, N \log(N), N_{unique}, N_{unique} \log(N_{unique})\right]$. Pruning small contributions, this gave:</p>
+<p>$$\begin{align}
+t_{\textit{sort-unique}} &amp;= 8 N \log(N) \\
+t_{\textit{hash-unique}} &amp;= 27 N_{unique} \log(N_{unique}) + 3 N \log(N)\,,
+\end{align}$$</p>
+<p>which fits our observation that <em>hash-unique</em> has a high cost per unique item, while <em>sort-unique</em> has a moderate cost per item (whether unique or duplicate), and that even <em>hash-unique</em> fails in practice to scale better than $O(N \log N)$.</p>
+<p>These results suggest the following extreme examples that favour hashing &amp; sorting (with our original moderate example also repeated), again reporting the time per item in nanoseconds:</p>
+<table class="table">
+<thead>
+<tr>
+<th>$N$</th>
+<th>$N_{unique}/N$</th>
+<th><em>sort-unique</em></th>
+<th><em>hash-unique</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$2^{16}$</td>
+<td>$\frac{1}{16}$</td>
+<td>75 ns</td>
+<td><span class="result-positive">21 ns</span></td>
+</tr>
+<tr>
+<td>$2^{20}$</td>
+<td>$\frac{1}{2}$</td>
+<td>125 ns</td>
+<td>193 ns</td>
+</tr>
+<tr>
+<td>$2^{24}$</td>
+<td>$1$</td>
+<td><span class="result-positive">143 ns</span></td>
+<td>517 ns</td>
+</tr>
+</tbody>
+</table>
+<h2 id="conclusions">Conclusions</h2>
+<p>Our results lead us to two high-level conclusions:</p>
+<p><strong>Use sort-unique when <code>data size &gt; L3</code>, or when the proportion of unique items is high</strong></p>
+<p><em>Hash-unique</em> suffers from very cache-unfriendly data access pattern, so gets much slower when the dataset falls out of CPU cache. Also, much of the cost of <em>hash-unique</em> seems to be allocation-related, so performance is worse when the proportion of unqiue items is high. In these cases, the more steady scaling of <em>sort-unique</em> makes it a better choice.</p>
+<p><strong>Computational complexity by counting logical ops can be a bad predictor of performance</strong></p>
+<p>We saw that <em>sort-unique</em> scales faithfully as $O(N \log N)$, both in terms of number of logical / data operations and in runtime. <em>Hash-unique</em> also scales faithfully in number of logical / data operations, $O(N)$, but scales $O(N \log N)$ in runtime.</p>
+<p>This is because our complexity analysis ignored the effect of cache hierarchies on performance (it effectively employed a "flat cost" model for any random access to memory). This proved very unrealistic for <em>hash-unique</em> (even though the same model was OK for <em>sort-unique</em>). We don't propose a better model here, but it's a reminder to keep an eye on <a href="https://en.wikipedia.org/wiki/Locality_of_reference">locality of reference</a> when thinking about performance.</p>
+<p><em>Read on... <a href="../2019-09-hash-vs-sort-2/article.html">[Part 2]</a></em></p>
+<hr />
+<h2 id="appendix-benchmarking">Appendix - benchmarking</h2>
+<p><em>Note: this includes the setup for Part 2, which includes other programming languages.</em></p>
+<ul>
+<li>Code: <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.cpp">C++</a>, <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.js">Javascript</a>, <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/HashVsSort.java">Java</a></li>
+<li>Results: (in <code>.csv.gz</code> format), <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/raw/data/2019-09-hash-vs-sort/timings_cpp.csv.gz">C++</a>, <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/raw/data/2019-09-hash-vs-sort/timings_js.csv.gz">Javascript</a>, <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/raw/data/2019-09-hash-vs-sort/timings_java.csv.gz">Java</a>; see also the <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/data/2019-09-hash-vs-sort/Analysis.ipynb">analysis notebook</a></li>
+<li>Data: uniform random integers over domain, uniformly resampled to create duplicates</li>
+<li>Stats: run 30 or 60 times, report median</li>
+</ul>
+<p><strong>Environment:</strong>
+<pre><code class="language-none">CPU: i7-4510U, 2.00GHz, 2 cores, 4 MB cache
+Memory: 8 GB DDR3, 1600 MT/s
+OS: Ubuntu 18.04 (64 bit), in Docker
+C++: gcc version 7.4.0  [flags: -O2 -std=c++17]
+Javascript: Node.js v10.16.3
+Java: OpenJDK 11.0.4</code></pre></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

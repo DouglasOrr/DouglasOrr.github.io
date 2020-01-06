@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Douglas Orr">
+    <meta name="keywords" content="C++,Java,Javascript,unique,distinct,deduplication,hashset">
+    <link rel="stylesheet" href="/css/lib.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Hash vs Sort [2]</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col">
+          <h1 id="hash-vs-sort-91part-293">Hash vs sort [part 2]</h1>
+<p><a href="../2019-09-hash-vs-sort/article.html">[Part 1]</a>, <strong>[Part 2]</strong></p>
+<p>In part 1, we saw two algorithms for finding unique items in a collection - <em>sort-unique</em> and <em>hash-unique</em>. After benchmarking them in C++ we found that while <em>sort-unique</em> was reasonably well-behaved (performing quite predictably), <em>hash-unique</em> had a stepped curve (linked to the CPU cache hierarchy) and a surprisingly high cost per unique item (linked with allocation). We will noe extend our work of part 1 in two areas - trying to see if we can improve on <em>hash-unique</em>, and benchmarking the two original methods in <em>Java</em> and <em>Javascript</em>, to check that our results don't only apply to C++.</p>
+<h2 id="fixing-hash-unique">"Fixing" hash-unique</h2>
+<p>We haven't yet discussed why <em>hash-unique</em> scales so badly with unique items. Our main suspects are memory locality and dynamic memory allocation (especially since <em>hash-unique</em> is actually an incremental process, maintaining a set of unique items at all times, rather than only computing it when required). It is hard to do much about locality, since this is fundamental to the hashing solution. However since our task is to do a "one-off unique" (rather than an incremental "maintain-unique"), we might be able to "fix" the dynamic allocation problem.</p>
+<p>Our idea is to count an upper bound on the number of items in each hash bucket, using a preparation pass where we count the total number of items that would be mapped to each hash bucket. This upper bound will only be reached if there are no duplicates, but means we can prepare enough space so we'll never need to reallocate memory. We then allocate contiguous chunks of memory for each hash bucket (e.g. a single array for the whole table, with stored indices in each hash bucket.) Note that this is a sort of <a href="https://en.wikipedia.org/wiki/Hash_table#Separate_chaining">separate chaining</a>, but can use an array rather than a linked list, since we know an upper bound on the size of each bucket.</p>
+<p>In the second pass, we find unique items by hashing each item again, then doing an "insert if new" into the hash bucket backing array. Finally, we scan through the buckets, removing any space between buckets so that the unique items are contiguous (which can be done in-place).</p>
+<p>The whole procedure looks something like this:</p>
+<p><img alt="hash and count instances, then over-allocate a results buffer before hashing items into free space, then copy out the results" class="img-fluid" src="img/custom_hash_unique.svg" /></p>
+<p>The implementation of this method (let's call it <em>custom-hash-unique</em>) is a bit more involved, if interested, see <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.cpp">code here</a>. Let's see how it performs, looking at the trend of <code>int32</code> with 50% unique items:</p>
+<p><img alt="Performance of custom hash-unique" class="img-fluid" src="img/chart_total_items_with_custom.png" /></p>
+<p>This all looks quite good - <em>custom-hash-unique</em> has a similar shape to <em>hash-unique</em>, but is considerably faster. Looks like allocations matter quite a lot! You might expect to see similar or better performance with a properly configured <a href="https://en.wikipedia.org/wiki/Hash_table#Open_addressing">open addressing</a> hash set, which could also be preallocated to a sensible size, and would save the trouble of following a pointer (or offset) from the hash table itself to the backing array.</p>
+<h2 id="other-languages">Other languages</h2>
+<p>Returning to our two simple alternatives <em>sort-unique</em> and <em>hash-unique</em>, let's benchmark two other popular languages - Javascript &amp; Java to see if they show a similar pattern.</p>
+<h3 id="javascript">Javascript</h3>
+<p>We implemented both <em>sort-unique</em> and <em>hash-unique</em> in Javascript, and benchmarked it as a standalone script using Node.js. The implementation of <em>hash-unique</em> was very easy:</p>
+<pre><code class="language-javascript">let unique = new Set(items);
+return Array.from(unique);</code></pre>
+
+<p>However, <em>sort-unique</em> required our own adjacent-unique loop, as there is no equivalent of <code>std::unique</code> in Javascript's built-ins (<a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.js">code here</a>). Here are the results (median runtime):</p>
+<table class="table">
+<thead>
+<tr>
+<th>$N$</th>
+<th>$N_{unique}/N$</th>
+<th><em>sort-unique</em></th>
+<th><em>hash-unique</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$2^{16}$</td>
+<td>$\frac{1}{16}$</td>
+<td>519 ns</td>
+<td><span class="result-positive">39 ns</span></td>
+</tr>
+<tr>
+<td>$2^{20}$</td>
+<td>$\frac{1}{2}$</td>
+<td>1284 ns</td>
+<td><span class="result-positive">182 ns</span></td>
+</tr>
+<tr>
+<td>$2^{24}$</td>
+<td>$1$</td>
+<td>1571 ns</td>
+<td><span class="result-positive">365 ns</span></td>
+</tr>
+</tbody>
+</table>
+<p>These headline performance numbers show that <em>hash-unique</em> is much (5-20x) faster than <em>sort-unique</em>; we suspect this is because we had to implement the second pass of <em>sort-unique</em> (which removes adjacent duplicates) as a Javascript loop (there is no built-in method to speed it up). However, the performance of <em>hash-unique</em> looks very good - let's compare it with C++:</p>
+<p><img alt="Javascript vs C++ - hash-unique performance with unique ratio 50%" class="img-fluid" src="img/chart_javascript_vs_cpp.png" /></p>
+<p>Not too bad, Javascript, for a language that is meant to be slower than C++! Clearly the implementations of <code>new Set(items)</code> and <code>Array.from()</code> are reasonably efficient. This result suggests we should "run with the language" (i.e. lean heavily on the built-in data structures) where possible - particularly in very dynamic languages like Javascript. When we do this, even slower languages can match faster ones! Being able to use an optimised built-in routine rather than a scripted version can far outweigh any small algorithmic differences.</p>
+<h3 id="java">Java</h3>
+<p>We tried the same again in Java. Again we're testing collections of integers, but in Java they can be "boxed" (held in an Object) e.g. <code>HashSet&lt;Integer&gt;</code>, or unboxed (held directly as a primitive value) e.g. <code>int[]</code>. We decided to use unboxed <code>int</code> values wherever possible, but in order to use <code>HashSet</code>, our implementation of <em>hash-unique</em> boxed them temporarily. The results show good performance in general:</p>
+<table class="table">
+<thead>
+<tr>
+<th>$N$</th>
+<th>$N_{unique}/N$</th>
+<th><em>sort-unique</em></th>
+<th><em>hash-unique</em></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$2^{16}$</td>
+<td>$\frac{1}{16}$</td>
+<td>92 ns</td>
+<td><span class="result-positive">38 ns</span></td>
+</tr>
+<tr>
+<td>$2^{20}$</td>
+<td>$\frac{1}{2}$</td>
+<td>138 ns</td>
+<td>194 ns</td>
+</tr>
+<tr>
+<td>$2^{24}$</td>
+<td>$1$</td>
+<td><span class="result-positive">157 ns</span></td>
+<td>369 ns</td>
+</tr>
+</tbody>
+</table>
+<p>This seems close enough to our original C++ results that it's worth comparing the trend:</p>
+<p><img alt="Java vs C++ - unique ratio 50%" class="img-fluid" src="img/chart_java_vs_cpp.png" /></p>
+<p>Here we see Java performing about as well as C++, sometimes even better. However, the performance seems to follow the same trend, so what we learnt from C++ (<em>hash-unique</em> is fastest for a data size that fit in L3, and low ratio of unique items, otherwise <em>sort-unique</em>) seems to apply to Java too.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p><strong>Java's <em>hash-unique</em> &amp; <em>sort-unique</em> behave similarly to C++</strong></p>
+<p>Despite boxing integers &amp; having a garbage collector in place of a manual allocator, Java implementations of these algorithms scale similarly and even have competitive runtime with their C++ versions.</p>
+<p><strong>Javascript prefers the built-in <em>hash-unique</em></strong></p>
+<p>In dynamic languages, it is often more important to use built-in methods where possible than to achieve peak algorithmic efficiency, and this seems to be the case with Javascript. Even in cases where (if we were in C++/Java), <em>sort-unique</em> should be faster, <em>hash-unique</em> is faster in Javascript due to the efficiency of the library implementations of common data structures and algorithms.</p>
+<p><strong>Using a specialised "one-off unique" (rather than "maintain unique") can speed up <em>hash-unique</em></strong></p>
+<p>Since we know all the items that are going to be added to the hash set in advance, we can construct an array with enough space allocated for every item in the original (and estimate an appropriate number of buckets). This means we never need to reallocate buckets or space for items (and items in a hash bucket can be contiguous in memory), which can give better performance.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
