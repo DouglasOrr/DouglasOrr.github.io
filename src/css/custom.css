@@ -2,7 +2,7 @@ h1 {
     margin-top: .8em;
 }
 h2 {
-    margin-top: .8em;
+    margin-top: 1em;
 }
 .dd-root {
     max-width: 45em;
@@ -13,4 +13,8 @@ code {
 pre > code {
     /** Inconsolata is great for blocks but not so good for inline (too small) */
     font-family: Inconsolata,Consolas,Monaco,'Andale Mono','Ubuntu Mono',monospace !important;
+}
+.result-positive {
+    color: #080;
+    font-weight: bold;
 }
