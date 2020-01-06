@@ -1,4 +1,5 @@
 title: Hash vs Sort
+keywords: C++,unique,distinct,deduplication,hashset
 
 # Finding unique items - hash vs sort?
 

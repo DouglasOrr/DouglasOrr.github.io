@@ -112,7 +112,10 @@ class RenderRule(Rule):
         with open(self.source, encoding='utf-8') as source_f:
             body = self.MARKDOWN.convert(source_f.read())
         title = ' '.join(self.MARKDOWN.Meta['title'])
-        html = template.replace('{{title}}', title).replace('{{body}}', body)
+        keywords = ','.join(self.MARKDOWN.Meta['keywords'])
+        html = (template.replace('{{title}}', title)
+                        .replace('{{keywords}}', keywords)
+                        .replace('{{body}}', body))
         with open(self.target, 'w', encoding='utf-8') as target_f:
             target_f.write(html)
 
