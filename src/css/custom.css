@@ -7,6 +7,10 @@ h2 {
 .dd-root {
     max-width: 45em;
 }
+blockquote {
+    font-style: italic;
+    padding-left: 1.5em;
+}
 code {
     color: #333;
 }
@@ -17,4 +21,7 @@ pre > code {
 .result-positive {
     color: #080;
     font-weight: bold;
+}
+.appendix-separator {
+    margin-top: 4em;
 }

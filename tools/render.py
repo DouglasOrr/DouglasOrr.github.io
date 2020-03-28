@@ -20,7 +20,7 @@ class RenameLinksProcessor(markdown.treeprocessors.Treeprocessor):
 
 
 class PrismFencedBlockPreprocessor(markdown.preprocessors.Preprocessor):
-    LANGUAGE_NAME_MAP = {'c++': 'cpp'}
+    LANGUAGE_NAME_MAP = {'c++': 'cpp', 'json': 'javascript'}
     BLOCK = re.compile(r'```(?P<language>[^\n]*)\n(?P<code>.+?)\n```',
                        flags=re.MULTILINE | re.DOTALL)
 
@@ -143,7 +143,7 @@ class Builder:
          ['https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
           'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/prism.min.js'] +
          [f'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-{language}.min.js'
-          for language in ['clike', 'javascript', 'c', 'cpp', 'java']]),
+          for language in ['clike', 'javascript', 'c', 'cpp', 'java', 'python']]),
     ]
     SRC_TEMPLATE = 'template.html'
     SRC_IGNORE = {'.ipynb_checkpoints'}
