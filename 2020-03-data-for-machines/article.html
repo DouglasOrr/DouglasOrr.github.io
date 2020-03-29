@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="author" content="Douglas Orr">
+    <meta name="keywords" content="development,programming,software,data">
+    <link rel="stylesheet" href="/css/lib.css">
+    <link rel="stylesheet" href="/css/custom.css">
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Write code for humans.</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col">
+          <h1 id="write-code-for-humans-design-data-for-machines">Write code for humans. Design data for machines.</h1>
+<p><strong>[Part 1]</strong>, <a href="../2020-03-data-for-machines-2/article.html">[Part 2]</a></p>
+<p>Two software engineers are having an argument. Andrew says, <em>"it's all about the code - programming is the art of creating code"</em>. Beatrice disagrees, <em>"it's all about the data - programs are just data transformations"</em>. So, who's right?</p>
+<p>Both, of course! Programming is all about writing code. Programs are all about transforming data. Both code-centric and data-centric views are useful ways to think about programming. But I think the way we write our code &amp; how we design our data should be different; in particular:</p>
+<blockquote class="blockquote">
+<p>Code should be written for humans to read, but data should be designed for machines to read.</p>
+</blockquote>
+<p>In other words, the most important audience for our code is humans (ourselves and other people), as we are the ones who will make-or-break the program in the future. And the most important audience for generated data is usually machines (other programs), because we tend to stack automation on top of existing automation. Therefore I believe <em>"write code for humans, design data for machines"</em> will help us create better programs, that work today and keep working tomorrow.</p>
+<p>In this two-part series, we'll dive into these ideas - what does it look like to write for humans vs machines, and why should we do it? Keep reading here for the (less controversial) first part <em>"write code for humans"</em>, or if you're already 100% sold on that, feel free to skip to <a href="../2020-03-data-for-machines-2/article.html">part 2</a> for <em>"design data for machines"</em>.</p>
+<h2 id="introduction">Introduction</h2>
+<p>First, to clarify - what is "code", what is "data"?</p>
+<p><img alt="code written by humans for machines, data written by machines for humans or machines" class="img-fluid" src="img/code_vs_data.svg" /></p>
+<p>In this article, when I say "code", I mean something a human has written, that will be read by a machine (another program or hardware). When I say "data", I mean something a machine has written, that may be read by a machine, a human, or both. Therefore, a configuration file where you set <code>logging.level = DEBUG</code> is code, while virtual machine instructions emitted by a compiler are data.</p>
+<p>Of course, code is data, but I think this over-simplified view (humans write code, machines write data) will serve us best for now...</p>
+<h2 id="writing-code-for-humans">Writing code for humans</h2>
+<p>As I program, I have two audiences - <em>humans</em> (myself and others) reviewing the code, and <em>machines</em> compiling/interpreting/linting/documenting the code. All programs must be written for machines to read (otherwise they're not programs in formal language, they're essays in natural language). And almost all programs should be written for humans to read.</p>
+<p>Writing code for a machine means I can't write</p>
+<pre><code class="language-cpp">int x = if (small) { 123 } else { 456 };</code></pre>
+
+<p>...in C++, since <code>if</code> is a statement not an expression. And writing code for humans means I shouldn't write</p>
+<pre><code class="language-cpp">auto y = (a?~b:-b)*(l+1/z(2))&gt;&gt;qq/q;</code></pre>
+
+<p>...because that's just harsh!</p>
+<p>So I must write for both human and machine. But I'd argue that <em>most</em> of my effort should be spent writing for my human audience. This means I think more about the human reading the program than the machine that compiles or runs it.</p>
+<p>For example, here is a Python program, designed with the Python interpreter in mind <em>(unhappy challenge: what does it do?)</em></p>
+<pre><code class="language-python">from heapq import *
+
+def get_results(input, n):
+    u, h, it = set([]), [], iter(input)
+    while True:
+        x = next(it, None)
+        if x is None:
+            break
+        elif x in u:
+            pass
+        elif len(h) &lt; n:
+            u.add(x)
+            heappush(h, x)
+        elif h[0] &lt; x:
+            u.add(x)
+            u.remove(heappushpop(h, x))
+    results = []
+    while h:
+        results.append(heappop(h))
+    return results[::-1]</code></pre>
+
+<p>As far as I know, this implementation is correct, and the Python interpeter handles it fine - but it's not written for humans. Here's my best attempt at the same operation, written with a human audience in mind:</p>
+<pre><code class="language-python">import heapq
+
+def nlargest_unique(iterable, n):
+    &quot;&quot;&quot;Find the n largest unique elements in iterable.
+
+    iterable -- iterable(item) -- comparable, hashable items
+
+    n -- int -- maximum number of results
+
+    returns -- list(item) -- up to n largest items from iterable
+    &quot;&quot;&quot;
+    # N.B. We are careful to only retain references to the largest-so-far
+    # elements from iterable (to reduce peak memory)
+    heap = []  # min-heap containing largest items so far
+    unique = set([])  # copy of items in &#x27;heap&#x27; (for fast membership query)
+    for item in iterable:
+        if item not in unique:
+            if len(heap) &lt; n:  # heap is filling up =&gt; add everything
+                heapq.heappush(heap, item)
+                unique.add(item)
+            elif heap[0] &lt; item:  # at capacity =&gt; replace min if greater
+                unique.remove(heap[0])
+                heapq.heappushpop(heap, item)
+                unique.add(item)
+    return sorted(heap, reverse=True)</code></pre>
+
+<p>Hopefully you're with me in preferring to read this version to the original! We won't try to properly cover <em>what</em> makes a program easy for humans to read in this essay. But briefly, here's some of the differences between the two implementations: docstrings, comments, simplified control flow, variable names, keyword arguments and high-level language constructs.</p>
+<blockquote class="blockquote">
+<p>Any fool can write code that a computer can understand. Good programmers write code that humans can understand.
+<footer class="blockquote-footer">Martin Fowler, Refactoring: Improving the Design of Existing Code, 1999</footer></p>
+</blockquote>
+<h2 id="why-write-code-for-humans">Why write code for humans?</h2>
+<p>My guess is you've heard the mantra <em>"write code for humans"</em> before - it certainly isn't a new idea. But it's important to ask: why? Writing code for humans is an overhead. It is work that we don't need to do in order to get our program to run on the machine. So why do it?</p>
+<blockquote class="blockquote">
+<p>Writing for humans is a good investment in the future of our code.</p>
+</blockquote>
+<p><strong>An investment in maintainable code.</strong> We usually need to change our programs after they've been written. They're not perfect, and need fixing. Or they're not complete, and need extending. When we do this, we'll find a trend: code that's easy for humans to understand will be correctly understood. Code that is correctly understood will be correctly modified. Therefore future versions of a human-readable program will break less.</p>
+<p><strong>An investment in reusable code.</strong> When we want to reuse code for a different purpose, we need to understand it (at least to understand what the code promises to do). If we don't properly understand what the code is trying to do, we'll use it incorrectly. When reusing functions or classes, this leads to a very common class of bug, the "expectation mismatch bug", where both caller and callee appear to be sensible and correct, but they don't interact correctly. Readable code will be easier to understand for the same level of effort, and might even encourage the reader to put in more effort (a virtuous cycle).</p>
+<p><strong>But it's "disposable".</strong> If you're sure your code really is "single use only", go ahead and write that inhuman love letter to your compiler! But exercise caution - even if you only ever need to debug my code an hour or a day later and go through a dozen edit-run-check cycles, it'd still probably be better to invest early in readability. You don't need to spend hours agonising whether to use a member or non-member function, or whether <code>post.set_subject_to(x)</code> or <code>post.subject = x</code> is the right API. But a little time naming things properly and factoring out well-defined functions wouldn't hurt.</p>
+<p><strong>But it's not for anyone else, only me.</strong> OK, this could be true. But in my experience I usually overestimate the memory and underestimate the laziness of the future me! When I think of the future me reading the code, I should assume that I'll forget the purpose, misunderstand how it works (wherever remotely possible) and make a raft of assumptions that would never occur to me now. So I'll write the code for dummies. I hope you're a bit more reliable than me - but if any of this applies to you, it's worth investing in readability now.</p>
+<p>Perhaps most importantly, it is <strong>a surprisingly cheap investment</strong>. While writing the code for the first time, you're in the best position to make your intent clear. Your mind is already preoccupied with how it works, and you're making the decisions that will shape the code "live". It will take extra thinking and extra typing to make your thoughts clear to future readers, but given the advantages described above, that investment will pay off surprisingly quickly. And as we practice writing readable code, the costs get lower and lower.</p>
+<h2 id="playing-the-long-game">Playing the long game</h2>
+<p>Let's stage a race between the fast-typing, just-get-it-working <em>Words-Per-Minute William</em> against the more careful human-readability-focused <em>Readability Ruth</em>...</p>
+<p><img alt="Readability Ruth starts the race slower but finishes faster than Words-Per-Minute William" class="img-fluid" src="img/readability_race.svg" /></p>
+<p>Early on, William saves time by just getting the code working and not wasting any time on good variable names, clean control flow, or any readability features at all. Ruth is a bit slower because she does spend time on readability. But as the race progresses, Ruth travels just as fast or even faster, but William has slowed down to a crawl as he has to spend lots of time trying to understand older code &amp; fix extra "misunderstanding problems".</p>
+<p><em>A silly, contrived picture - but I've definitely seen this happen (maybe not in a day).</em></p>
+<h2 id="caveat-the-machine-matters">Caveat - the machine matters</h2>
+<p>In this post, I've mainly been talking about the form of our code, not the function. But I would hate to advocate for unnecessarily inefficient code because it passes a readability test.</p>
+<p>As a side note: In some cases, an efficiency improvement can aid readability. For example, in Python a <code>list</code> supports the test <code>"thingy" in mylist</code> (which does what it says), but is <a href="https://github.com/python/cpython/blob/v3.8.2/Objects/listobject.c#L452">implemented</a> as a linear scan. A <code>set</code> is Python's hash set which also supports the test <code>"thingy" in myset</code>, <a href="https://github.com/python/cpython/blob/v3.8.2/Objects/setobject.c#L57">implemented</a> as a hash table lookup, and has much better performance for large collections. So a <code>set</code> is more efficient, but it's also a useful hint to the reader of the code that the main purpose of the variable is membership queries (also helping readability).</p>
+<p>Sometimes we will need to sacrifice readability for efficiency and vice versa - there isn't a one-size-fits-all rule for this. But often, when we think about the form of code rather than its function (e.g. variable names, comments) it's more of an effort-vs-readability trade-off (which I have tried to address in this post).</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>In summary, I suggest that we should <strong>optimise code for human-readability, constrained by machine-readability</strong>. Since we and others will probably have to read our code in order to change, fix or reuse it, it's worth making the readability investment upfront. So our default position should be to put the effort in and write code that's as easy to read as possible. If we do this, our software will work better as it evolves and grows. If we don't, we risk getting stuck in a maze of misunderstandings, and introducing problems as fast as we fix them.</p>
+<p>Let's make the investment and write code for humans.</p>
+<p><em>Read on... <a href="../2020-03-data-for-machines-2/article.html">[Part 2]</a></em></p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
