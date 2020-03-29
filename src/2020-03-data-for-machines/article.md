@@ -5,9 +5,9 @@ keywords: development,programming,software,data
 
 **\[Part 1\]**, [\[Part 2\]](../2020-03-data-for-machines-2/article.md)
 
-Two software engineers are having an argument. Andrew says _"it's all about the code - programming is the art of creating code"_. Beatrice disagrees _"it's all about the data - programs are just data transformations"_. So, who's right?
+Two software engineers are having an argument. Andrew says, _"it's all about the code - programming is the art of creating code"_. Beatrice disagrees, _"it's all about the data - programs are just data transformations"_. So, who's right?
 
-Both, of course! Programming is all about writing code. Programs are all about transforming data. Both code-centric and data-centric views are useful ways to think about programming. But I think the way we write our code & how we design our data should be different, in particular:
+Both, of course! Programming is all about writing code. Programs are all about transforming data. Both code-centric and data-centric views are useful ways to think about programming. But I think the way we write our code & how we design our data should be different; in particular:
 
 > Code should be written for humans to read, but data should be designed for machines to read.
 
@@ -29,7 +29,7 @@ Of course, code is data, but I think this over-simplified view (humans write cod
 
 ## Writing code for humans
 
-As I program, I have two audiences - _people_ (myself and others) reviewing the code, and _machines_ compiling/interpreting/linting/documenting the code. All programs must be written for machines to read (otherwise they're not programs in formal language, they're essays in natural language). And almost all programs should be written for humans to read.
+As I program, I have two audiences - _humans_ (myself and others) reviewing the code, and _machines_ compiling/interpreting/linting/documenting the code. All programs must be written for machines to read (otherwise they're not programs in formal language, they're essays in natural language). And almost all programs should be written for humans to read.
 
 Writing code for a machine means I can't write
 
@@ -45,7 +45,7 @@ auto y = (a?~b:-b)*(l+1/z(2))>>qq/q;
 
 ...because that's just harsh!
 
-So I must write for both human and machine. But I'd argue that _most_ of my effort should be spent writing for my human audience. This means I think more about the people reading the program than the machine that compiles or runs it.
+So I must write for both human and machine. But I'd argue that _most_ of my effort should be spent writing for my human audience. This means I think more about the human reading the program than the machine that compiles or runs it.
 
 For example, here is a Python program, designed with the Python interpreter in mind _(unhappy challenge: what does it do?)_
 
@@ -140,14 +140,14 @@ _A silly, contrived picture - but I've definitely seen this happen (maybe not in
 
 In this post, I've mainly been talking about the form of our code, not the function. But I would hate to advocate for unnecessarily inefficient code because it passes a readability test.
 
-As a side note: In some cases, an efficiency improvement can aid readability. For example, in Python a `list` supports the test `"thingy" in mylist` (which does what it says), but is [implemented](https://github.com/python/cpython/blob/v3.8.2/Objects/listobject.c#L452) as a linear scan. A `set` is Python's hash set which also supports the test `"thingy" in myset`, [implemented](https://github.com/python/cpython/blob/v3.8.2/Objects/setobject.c#L57) as a hash table lookup, and has much better performance for large collections. So a `set` is more efficient, but it is also a useful hint to the reader of the code that the main purpose of the variable is membership queries, so can help readability too.
+As a side note: In some cases, an efficiency improvement can aid readability. For example, in Python a `list` supports the test `"thingy" in mylist` (which does what it says), but is [implemented](https://github.com/python/cpython/blob/v3.8.2/Objects/listobject.c#L452) as a linear scan. A `set` is Python's hash set which also supports the test `"thingy" in myset`, [implemented](https://github.com/python/cpython/blob/v3.8.2/Objects/setobject.c#L57) as a hash table lookup, and has much better performance for large collections. So a `set` is more efficient, but it's also a useful hint to the reader of the code that the main purpose of the variable is membership queries (also helping readability).
 
 Sometimes we will need to sacrifice readability for efficiency and vice versa - there isn't a one-size-fits-all rule for this. But often, when we think about the form of code rather than its function (e.g. variable names, comments) it's more of an effort-vs-readability trade-off (which I have tried to address in this post).
 
 
 ## Conclusion
 
-In summary, I suggest that we should **optimise code for human-readability, constrained by machine-readability**. Since we and others will probably have to read our code in order to change, fix or reuse it, it's worth making the readability investment now. So our default position should be to put the effort in and write code that's as easy to read as possible. If we do this, our software will work better as it evolves and grows. If we don't, we risk getting stuck in a maze of misunderstandings, and introducing problems as fast as we fix them.
+In summary, I suggest that we should **optimise code for human-readability, constrained by machine-readability**. Since we and others will probably have to read our code in order to change, fix or reuse it, it's worth making the readability investment upfront. So our default position should be to put the effort in and write code that's as easy to read as possible. If we do this, our software will work better as it evolves and grows. If we don't, we risk getting stuck in a maze of misunderstandings, and introducing problems as fast as we fix them.
 
 Let's make the investment and write code for humans.
 

@@ -5,7 +5,7 @@ keywords: development,programming,software,data
 
 [\[Part 1\]](../2020-03-data-for-machines/article.md), **\[Part 2\]**
 
-This is the second part of our series _Write code for humans, design data for machines_. In [part 1](../2020-03-data-for-machines/article.md) we saw why it's better to write code for humans to read. Now in part 2, we'll see why it's better to design data for machines to read.
+This is the second part of the series _Write code for humans, design data for machines_. In [part 1](../2020-03-data-for-machines/article.md) we saw why it's better to write code for humans to read. Now in part 2, we'll see why it's better to design data for machines to read.
 
 
 ## Design data for machines
@@ -48,14 +48,12 @@ Using this output, it would be easy to recreate the original report for a "direc
 
 We won't go into how to design data formats for machines, but in this case the main differences are that it contains full information that was summarised for the human and is in standard portable formats (JSON, ISO 8601). Note: we could have gone further - it is still a text-based container format that can be read by humans, rather than a binary format (e.g. Avro or Protocol Buffers).
 
-So, one simple test to apply when designing data formats for machines is:
-
-> How would I feel if I had to write a parser for these data?
+In summary, one simple test to apply when designing data formats for machines is: **"How would I feel if I had to write a parser for this data?"**
 
 
 ## Why design data for machines?
 
-Why should I design data for machines to read? Because, unlike source code, it is written by machines. And, this side of Artificial General Intelligence (dear reader on the other side, please disregard), machine-written text is just not as interesting as human-written text (or any other media!)
+Having seen an example of what it looks like, let's try to motivate the proposal... why should I design data for machines to read? Because, unlike source code, it is written by machines. And, this side of Artificial General Intelligence (dear reader on the other side, please disregard), machine-written text is just not as interesting as human-written text (or any other media!)
 
 Here's a typical conversation with a machine these days...
 
@@ -63,16 +61,16 @@ Here's a typical conversation with a machine these days...
 
 Even with emoji, machine-generated canned text is a bit dull. Next week/month/year, I will get tired of looking at my program's output and will automate it. Now, invisible data is being transferred between two machines with no human looking at it, and the the system will be more likely to work if the data is designed for machines to read simply and unambiguously.
 
-But, you might reasonably argue: "ultimately, the data our programs generate will be shown to human readers - doesn't that kill the argument?" I'd say no - although some information will eventually be shown to a human, we tend to assume it's the program we're writing right now that will do it and we're often wrong. There are usually a few more machines in the chain before it finally appears in front of a human. So I'm not advocating for a hard push to an extreme position "all output must be easily machine-readable" - more of a gentle nudge away from our default, which is to design too much data for humans.
+But, you might reasonably argue: "ultimately, the data our programs generate will be shown to human readers - doesn't that kill the argument?" I'd say no - although some information will eventually be shown to a human, we tend to assume it's the program we're writing right now that will do it and we're often wrong. There are usually a few more machines in the chain before it finally appears in front of a human. So I'm not advocating for a hard push to an extreme position "all output must be easily machine-readable" - more of a gentle nudge away from our default, which is to design data for humans too often.
 
-> "Our default is to design too much data for humans"
+We know (too late) this has gone wrong when machines are writing and reading data in formats that were designed for humans, but are never being read by humans. Clearly this is a silly outcome - but it is surprisingly easy to get there. _(See the Appendix for my best guess at why this happens.)_
 
-We know (too late) when this has gone wrong when machines are writing and reading data in formats that were designed for humans, but are never being read by humans. Clearly this is a silly outcome - but it is surprisingly easy to get there.
+> "Our default is to design data for humans too often"
 
-The cost of this is usually borne by the reading code - it might have slow and brittle regular expressions to parse input, and need to make assumptions about how to interpret the input. The latter is a particularly worrying problem for machines. In our test example, a machine reading `"23rd Feb '20"` might have to assume it was assume 21st century, so the year `2020`. A machine that reads `"2020-02-23T15:28:51Z"`, however, has no such problem. Parsing ambiguous input is hard, and we should avoid it when we can!
+The cost of this is usually borne by the reading code - it might have slow and brittle regular expressions to parse input, and need to make assumptions about how to interpret the input. The latter is a particularly worrying problem for machines. In our test example, a machine reading `"23rd Feb '20"` might have to assume it was the 21st century, so the year `2020`. A machine that reads `"2020-02-23T15:28:51Z"`, however, has no such problem. Parsing ambiguous input is hard, and we should avoid it when we can!
 
 
-## Functions too
+## Data design within a program
 
 This problem isn't limited to complete programs, the same logic applies to individual functions, for example:
 
@@ -101,7 +99,7 @@ Unlike source code, it is hard to make program output easy for both humans and m
 
 There are a few ways to "have our cake and eat it" here. One is to create two modes of running our program - one that generates a machine-readable output, another that generates human-readable output. We could also create both outputs at the same time - maybe the program generates human-readable info at the command line, but also a machine-readable data file. Or we could build a separate special post-processor or wrapper program that translates machine output into human output - typically this is a relatively simple program that just reformats and presents the data.
 
-When thinking about code, our advice was "consider your primary audience humans", so our advice now for data design is "usually, consider your primary audience machines". Clearly an interactive UI should be designed for humans, but usually, most parts of your program will be operated by machines, and their output read by machines - so consider what is easiest for the machine to read. Machines are very different to humans - when I say "easy" for a machine to read, I really mean _efficient_, _unambiguous_ and often _portable_. For serialised data, standard container formats like JSON, Avro, protocol buffers, XML, etc are a great place to start.
+When thinking about code, my advice was "consider your primary audience humans", so my advice now for data design is "usually, consider your primary audience machines". Clearly an interactive UI should be designed for humans, but usually, most parts of your program will be operated by machines, and their output read by machines - so consider what is easiest for the machine to read. Machines are very different to humans - when I say "easy" for a machine to read, I really mean _efficient_, _unambiguous_ and often _portable_. For serialised data, standard container formats like JSON, Avro, protocol buffers, XML, etc are a great place to start.
 
 
 ## Conclusion: humans write for humans; machines write for machines
