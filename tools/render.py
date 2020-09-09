@@ -2,6 +2,8 @@ import argparse
 import glob
 import html
 import inotify.adapters
+import io
+import jsmin
 import logging
 import markdown
 import os
@@ -127,10 +129,16 @@ class DownloadRule(Rule):
 
     def _build(self):
         logging.info(f'download {" + ".join(self.sources)} => {self.target}')
-        with open(self.target, 'wb') as target_f:
-            for source in self.sources:
-                with urllib.request.urlopen(source) as response:
-                    target_f.write(response.read())
+        tmpfile = io.StringIO()
+        for source in self.sources:
+            with urllib.request.urlopen(source) as response:
+                tmpfile.write(response.read().decode('utf8'))
+        # Automatically minify js
+        data = tmpfile.getvalue()
+        if self.target.endswith('.js'):
+            data = jsmin.jsmin(data)
+        with open(self.target, 'w') as target_f:
+            target_f.write(data)
 
 
 class Builder:
@@ -138,11 +146,11 @@ class Builder:
     DEST_LIBS = [
         ('css/lib.css',
          ['https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css',
-          'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/themes/prism.min.css']),
+          'https://cdn.jsdelivr.net/npm/prismjs@1.21.0/themes/prism.css']),
         ('js/lib.js',
          ['https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js',
-          'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/prism.min.js'] +
-         [f'https://cdnjs.cloudflare.com/ajax/libs/prism/1.17.1/components/prism-{language}.min.js'
+          'https://cdn.jsdelivr.net/npm/prismjs@1.21.0/prism.js'] +
+         [f'https://cdn.jsdelivr.net/npm/prismjs@1.21.0/components/prism-{language}.js'
           for language in ['clike', 'javascript', 'c', 'cpp', 'java', 'python']]),
     ]
     SRC_TEMPLATE = 'template.html'
