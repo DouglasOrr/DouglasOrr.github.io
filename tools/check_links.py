@@ -45,10 +45,9 @@ def check_link(link, file_name, site_files):
         elif href == '/':
             local_path = 'index.html'
         elif href.startswith('/'):
-            local_path = link.href[1:]
+            local_path = href[1:]
         else:
-            local_path = os.path.normpath(
-                os.path.join(os.path.dirname(file_name), link.href))
+            local_path = os.path.normpath(os.path.join(os.path.dirname(file_name), href))
         return local_path in site_files
 
 
