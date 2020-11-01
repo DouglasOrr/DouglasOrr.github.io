@@ -117,7 +117,7 @@ Let's look at an example. At each point, we'll compare against a full softmax eq
 
 ![pair of bar charts, with a dense chart on the left for "full softmax", and a sparser set of spikes over "bird", "cat", "dog" and "horse" on the right](img/scores.png)
 
-On the left, there's the regular full set of scores for a regular softmax - these are simply the model output for each class. On the right, we have our sampled softmax scores. In this case, we've taken 3 negative samples, which are `{bird, cat, dog}`. Each sample score has two portions - the portion from the model (dark blue) and a portion from the correction term from our equation \eqref{eqn:loss} (light blue).
+On the left, there's the regular full set of scores for a regular softmax - these are simply the model output for each class. On the right, we have our sampled softmax scores. In this case, we've taken 3 negative samples, which are `{bird, cat, dog}`. Each sample score has two portions - the portion from the model (dark blue) and a portion from the correction term in our loss equation \eqref{eqn:loss} (light blue).
 
 If we drew more samples, the correction would be decreased, but if we had more classes (so a lower probability of sampling each class) the correction term would increase. This is because the goal of the correction term is to "cancel out" the sampling procedure, on average. In contrast, the target score for "horse" doesn't have a correction term, as it's always included exactly once.
 
@@ -131,7 +131,7 @@ For our example, the gradients look like this:
 
 ![pair of bar charts; on the left: a negative bar for "horse", positive bars for "cat", "dog", "truck" and tiny positive bars for everything else; on the right, a larger negative bar for "horse", much larger positive bar for "cat", positive bar for "dog" and tiny positive bar for "bird", everything else zero](img/gradients.png)
 
-First, notice that there are only gradients for the target class and noise samples - everything else is zero (or more accurately, not even computed).
+First, notice that there are only gradients for the target class and noise samples - everything else is zero (or not even computed).
 
 Second, we see remaining class gradients are all larger (positive or negative) values. In particular the gradient for "cat" is considerably larger. This is due both to the adjustment and the missing (unsampled) classes.
 

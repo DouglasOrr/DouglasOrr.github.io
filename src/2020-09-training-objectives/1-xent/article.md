@@ -5,9 +5,9 @@ keywords: deep-learning,training,tutorial
 
 If you’ve tried deep learning for yourself, I’d bet you’ve trained a model using some variant of softmax cross entropy loss. It’s so overwhelmingly popular I thought I might write a series of blog posts ([index](/index.html#classifier-training-objectives)) to remind myself there are other options out there!
 
-So why not skip straight to the other juicy options? First, we should probably compare the weird 1% alternatives to the dominant 99% market leader. But second, it turns out that softmax cross entropy loss is actually quite interesting...
+So why not skip straight to the other juicy options? First, we should probably compare the weird 1% alternatives to the dominant 99% market leader. But second, it turns out that softmax cross entropy loss is actually quite interesting.
 
-In this article, we'll think through the core idea of softmax cross entropy loss, see how to add it to a PyTorch model, and finally look at what actually happens when we use this loss. Note: I'm assuming you already know some core deep learning concepts - e.g. what a forward pass, backward pass and loss function is.
+In this article, we'll think through the core idea of softmax cross entropy loss, see how to add it to a PyTorch model, and finally look at what actually happens when we use this loss. I'll assume you already know some core deep learning concepts - e.g. what a forward pass, backward pass and loss function is.
 
 
 ## Core idea
