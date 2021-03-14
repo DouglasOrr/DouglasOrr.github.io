@@ -92,7 +92,7 @@ noise_scores -= 1e6 * reject_samples
 noise_scores -= T.log((n_samples - reject_samples.sum(-1, keepdims=True)).float())
 
 # 5. Apply regular softmax cross entropy
-scores = T.cat([label_scores[:,np.newaxis], noise_scores], dim=1)
+scores = T.cat([label_scores[:, np.newaxis], noise_scores], dim=1)
 loss = T.nn.functional.cross_entropy(scores, T.zeros(batch_size, dtype=T.long))
 print(float(loss))
 loss.backward()
