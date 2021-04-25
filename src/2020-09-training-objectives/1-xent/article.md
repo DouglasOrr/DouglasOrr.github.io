@@ -3,24 +3,26 @@ keywords: deep-learning,training,tutorial
 
 # Softmax Cross Entropy Loss
 
-If you’ve tried deep learning for yourself, I’d bet you’ve trained a model using some variant of softmax cross entropy loss. It’s so overwhelmingly popular I thought I might write a series of blog posts ([index](/index.html#classifier-training-objectives)) to remind myself there are other options out there!
+If you’ve tried deep learning for yourself, I’d guess you’ve trained a model using softmax cross entropy loss. It’s so overwhelmingly popular I thought I might write a series of blog posts ([here](/index.html#classifier-training-objectives)) to remind myself there are other options out there.
 
-So why not skip straight to the other juicy options? First, we should probably compare the weird 1% alternatives to the dominant 99% market leader. But second, it turns out that softmax cross entropy loss is actually quite interesting.
+Before we get to the alternatives, we should probably look at the dominant 99% market leader (for sake of comparison). At the same time, it turns out that softmax cross entropy loss is surprisingly interesting.
 
 In this article, we'll think through the core idea of softmax cross entropy loss, see how to add it to a PyTorch model, and finally look at what actually happens when we use this loss. I'll assume you already know some core deep learning concepts - e.g. what a forward pass, backward pass and loss function is.
 
 
 ## Core idea
 
-Imagine we’re trying to train a function to classify images is it a plane / bird / horse etc. For example, here’s an input image:
+Imagine we’re trying to train a function to classify images "is it a plane? / bird? / horse? etc." In order to train this function, we'll start with a random initialization and take some steps to minimize a loss function. So one of our first problems is how to choose this loss function.
+
+For example, here’s an input image:
 
 ![image of a horse](img/example_horse.png)
 
-Our function should predict that this is a horse. However this objective isn’t very "continuous" - we’re either right (if we said "horse") or wrong (e.g. if we said "dog"). It’s hard to optimize such a hard "right or wrong" outcome, so we "relax" our outputs & say our function is going to predict a probability distribution over all the possible labels for the image.
+Our function should classify this as a horse. We can give our function one point if it gets it right, and nothing if it gets it wrong. This is called accuracy. Unfortunately accuracy isn’t continuous - we’re either right (if we said horse) or wrong (e.g. if we said dog). It’s hard to optimize such a hard "right or wrong" outcome, so we _relax_ our outputs & change our function to predict a probability distribution over all the possible labels for the image.
 
 > "Relax" in this context essentially means: "hey there, function, chill on this "horse" business a bit - it might be a large dog, after all".
 
-So the output might look a bit like this:
+So the output might look like this:
 
 ![bar chart of probabilities, with the highest spike by "horse"](img/activations_probs.png)
 
@@ -30,9 +32,9 @@ Now we have two problems left. First, we need our function to produce something 
 
 $$y_i = \frac{e^{x_i}} {\sum_j e^{x_j}}$$
 
-The second problem is to define a _loss function_ that compares our function’s probability output against a target label and tries to make them as similar as possible. Imagine that the true labels are actually single samples from a true probability distribution, which says "given this bunch of pixels, it’s a horse 90% of the time, a dog 6% of the time, etc…".  In this case, a reasonable way to compare two probability distributions (one of which is known, the other only provides samples) is cross entropy. The cross entropy between our function and reality will be minimized when the probabilities exactly match (in which case cross entropy will equal reality’s own entropy.)
+The second problem is to define a _loss function_ that compares our function’s probability output against a target label and tries to make them as similar as possible. To do this, we imagine that the true labels are actually single samples from a true probability distribution, which says "given this bunch of pixels, it’s a horse 90% of the time, a dog 6% of the time, etc…".  In this case, a reasonable way to compare two probability distributions, one of which is known, the other only provides samples, is cross entropy. The cross entropy between our function and "reality" will be minimized when the probabilities exactly match, in which case cross entropy will equal reality’s own entropy.
 
-Putting this together, we apply softmax then take cross entropy against a single target sample $t$ - this is the "softmax cross entropy" loss function:
+Putting this together, we apply softmax then take cross entropy against a single target sample $t$, which is the _softmax cross entropy_ loss function:
 
 \begin{equation}
 L(x, t) = -x_t + \log \sum_i \\!e^{x_i}
@@ -43,7 +45,7 @@ Fortunately, using this loss function is a bit easier than motivating it...
 
 ## PyTorch implementation
 
-Adding a softmax cross entropy loss at the end of a PyTorch model is very easy. So common that they don’t even want you to have to type "softmax"...
+Adding a softmax cross entropy loss at the end of a PyTorch model is very easy. They don't even make you type "softmax"...
 
 ```python
 labels = ...
@@ -58,55 +60,55 @@ The model produces `outputs`, which are typically shaped `(batch x num_classes)`
 
 ## What does it do?
 
-In the forward pass, we start with a vector of floats from our model. We can think of these as "scores" for each class:
+In the forward pass, we start with a vector of floating point numbers from our model. We can think of these as "scores" for each class:
 
 ![bar chart of scores for airplane, automobile, horse, etc, with the highest spike on "horse"](img/activations_scores.png)
 
-Because of the next step, the absolute values of the scores don't mean anything, and there's nothing "special" about zero.
+Because of the next step, the absolute values of the scores don't mean anything, and there's nothing special about zero.
 
 Looking at equation \eqref{eqn:loss} above, we see that softmax + cross entropy is actually the same as log(softmax) + lookup + negation. It turns out this is an easier way to follow through the logic. First we apply log-softmax to our scores, turning them into log probabilities. This means if you exponentiate & sum them, you’ll get 1. These log probabilities look like this:
 
 ![bar chart of log probabilities for airplane, automobile, horse, etc. all below the axis, but the closest is "horse"](img/activations_logprobs.png)
 
-Log softmax hasn’t done anything very complex - it has just shifted everything down by the same amount so that if you exponentiate & sum, you’ll get 1.
+Log softmax hasn’t done anything complex, it has shifted everything down by the same amount so that if you exponentiate & sum, you’ll get 1.
 
 The final step in the forward pass is lookup & negation. We just need to look up the log-probability of the true label ("horse"), negate it, and we have our cross entropy loss for this example. We can think of the lookup as a dot product with a "one hot" target distribution that looks like this:
 
 ![bar chart of target distribution for airplane, automobile, horse, etc. with everything 0 except "horse" which is 1](img/target_horse.png)
 
-Dot-product this target vector with our log-probabilities and we get the softmax cross entropy loss (in this case, `1.194`).
+Dot-product this target vector with our log-probabilities, negate, and we get the softmax cross entropy loss (in this case, `1.194`).
 
 ### The backward pass
 
-Now we can get to the "main business". The point of the loss is really to provide gradients to update the parameters in our model. So let’s walk back through the gradients.
+Now we can get to the real business of the loss function. The point of the loss is really to provide gradients to update the parameters in our model. Let’s walk through back through the gradients.
 
 The first step is to get gradients with respect to log-probabilities. This is easy - from the lookup (or dot product) and negation, we get:
 
 ![bar chart of gradients for airplane, automobile, horse etc. with everything 0 except "horse" which is -1](img/gradients_logprobs.png)
 
-Just a (flipped) one-hot vector again. The cross entropy loss only cares about the probability of the correct label "horse", nothing else. You could increase the probability of "dog", and as long as you "fix" the probability distribution without changing the probability of "horse", there would be no change in the loss.
+Just a (flipped) one-hot vector again. Cross entropy loss only cares about the probability of the correct label "horse", nothing else. You could increase the probability of "dog", and as long as you fix the probability distribution without changing the probability of "horse", there would be no change in the loss.
 
-Next, we backpropagate through the log-softmax to find the gradient with respect to scores:
+Next, we backpropagate through log-softmax to find the gradient with respect to scores:
 
 ![bar chart of gradients for airplane, automobile, horse etc. with "horse" below the axis, everything else above](img/gradients_scores.png)
 
-Now, this says that if you increased the score of "dog", the loss would increase. This is because of the softmax normalization term - if you increased the "dog" score, all other log-probabilities would decrease by the same amount, which means the "horse" log-probability would decrease (and the loss increases).
+This says that if you increased the score of "dog", the loss would increase. This is because of the softmax normalization term - if you increased the "dog" score, all other log-probabilities would decrease by the same amount, which means the "horse" log-probability would decrease (and the loss increases).
 
 If we check the gradient equation, we notice a couple of interesting things:
 
 $$\frac{dL}{dx_i} = p_i - \delta_{it}$$
 
-Here, $p_i$ is the (softmax-ed) predicted probability of class $i$ ($p_i = \mathrm{softmax}(x)\_i$), and $\delta_{it}$ is the Kronecker Delta (1 when the indices are equal, otherwise 0). The first thing to notice is that only the correct class $t$ has a negative gradient, all the other classes have a positive gradient. This means that softmax tries to "push up" the score of the correct class, and "push down" all other scores. High-probability incorrect classes are pushed down more than low-probability ones, which makes sense.
+Here, $p_i$ is the (softmax-ed) predicted probability of class $i$ ($p_i = \mathrm{softmax}(x)\_i$), and $\delta_{it}$ is the Kronecker Delta (1 when the indices are equal, otherwise 0). The first thing to notice is that only the correct class $t$ has a negative gradient, all the other classes have a positive gradient. This means that softmax tries to "push up" the score of the correct class, and "push down" all other scores. High-probability incorrect classes are pushed down more than low-probability ones, which makes intuitive sense.
 
-The second thing to notice is that the gradient must sum to zero ($\sum_i p_i =\\! 1$ and $\sum_i \delta_{it} = 1$). This means that the gradient below the axis for the correct class is "balanced" by the same total gradient (spread across all other classes) above the axis.
+The second thing to notice is that the gradient must sum to zero ($\sum_i p_i =\\! 1$ and $\sum_i \delta_{it} = 1$). This means that the gradient below the axis for the correct class is balanced by the same total gradient (spread across all other classes) above the axis.
 
-Finally, the magnitude of the gradient depends on the probability of the target class, as the total probability above and below the axis is $1-p_t$. This makes intuitive sense - if the probability of the target class is already 1, the loss is already minimized, so no update is needed. But if the probability of the correct class is small, the model should get a large update.
+Finally, the magnitude of the gradient depends on the probability of the target class, as the total probability above and below the axis is $1-p_t$. This makes intuitive sense - if the probability of the target class is already 1, the loss has already been minimized, so no update is needed. But if the probability of the correct class is small, the model should get a large update.
 
-These observations can motivate two variations on softmax cross entropy - one tries to provide "positive" updates to more classes with a richer target distribution ([teacher-student training](../2-teacher/article.html)). Another tries to optimize the computation by using sparse "negative" updates to incorrect classes ([sampled softmax](../3-sampled/article.html)).
+These observations can motivate some variations on softmax cross entropy. One tries to provide positive updates to more classes with a richer target distribution ([teacher-student training](../2-teacher/article.html)). Another tries to optimize the computation by using sparse negative updates for incorrect classes ([sampled softmax](../3-sampled/article.html)).
 
 ## Wrap up
 
-We’ve seen softmax cross entropy, it’s motivation as a reasonably obvious way to relax and train a classifier and most importantly the gradient updates it feeds back to the classifier we’re training. It’s hard to beat it as a general purpose objective, so in the rest of the series, we’ll look at a few variations that’ll make sense in specific situations. For now, though, softmax cross entropy enjoys market dominance and that looks to continue for years to come.
+We’ve seen softmax cross entropy, it’s motivation as a reasonably obvious way to relax and train a classifier and most importantly the gradient updates it feeds back to the classifier we’re training. It’s hard to beat it as a general purpose training objective for classification, so in the rest of the series we’ll look at a few variations that make sense in specific situations. For now, though, softmax cross entropy enjoys market dominance and that looks to continue for years to come.
 
 <ul class="nav nav-pills">
   <li class="nav-item">
