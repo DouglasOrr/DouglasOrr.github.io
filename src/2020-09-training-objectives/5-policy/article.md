@@ -189,6 +189,9 @@ Policy gradient estimation is a powerful although slightly fiddly technique. Alt
 
 <ul class="nav nav-pills">
   <li class="nav-item">
+    <a class="nav-link" href="../6-review/article.html">Next - review</a>
+  </li>
+  <li class="nav-item">
     <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
   </li>
 </ul>

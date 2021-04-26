@@ -15,7 +15,7 @@ My grab bag of various diversions/essays about machine learning and software eng
  3. [Sampled Softmax Loss](2020-09-training-objectives/3-sampled/article.md)
  4. [Value Function Estimation](2020-09-training-objectives/4-value/article.md)
  5. [Policy Gradient Estimation](2020-09-training-objectives/5-policy/article.md)
- 6. Review - try them for yourself
+ 6. [Review - try them for yourself](2020-09-training-objectives/6-review/article.md)
 
 2020-03 - [Write code for humans, design data for machines \[part 1\]](2020-03-data-for-machines/article.md) [\[part 2\]](2020-03-data-for-machines-2/article.md)
 
