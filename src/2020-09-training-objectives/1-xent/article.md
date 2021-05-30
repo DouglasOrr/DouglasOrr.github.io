@@ -12,17 +12,17 @@ In this article, we'll think through the core idea of softmax cross entropy loss
 
 ## Core idea
 
-Imagine we’re trying to train a function to classify images "is it a plane? / bird? / horse? etc." In order to train this function, we'll start with a random initialization and take some steps to minimize a loss function. So one of our first problems is how to choose this loss function.
+Imagine we’re trying to train a function to classify images "is it a plane? / bird? / horse? etc." In order to train this function, we'll start with a random initialisation and take some steps to minimise a loss function. So one of our first problems is how to choose this loss function.
 
 For example, here’s an input image:
 
 ![image of a horse](img/example_horse.png)
 
-Our function should classify this as a horse. We can give our function one point if it gets it right, and nothing if it gets it wrong. This is called accuracy. Unfortunately accuracy isn’t continuous - we’re either right (if we said horse) or wrong (e.g. if we said dog). It’s hard to optimize such a hard "right or wrong" outcome, so we _relax_ our outputs & change our function to predict a probability distribution over all the possible labels for the image.
+Our function should classify this as a horse. We can give our function one point if it gets it right, and nothing if it gets it wrong. This is called accuracy. Unfortunately accuracy isn’t continuous - we’re either right (if we said horse) or wrong (e.g. if we said dog). It’s hard to optimise such a hard "right or wrong" outcome, so we _relax_ our outputs & change our function to predict a probability distribution over all the possible labels for the image.
 
 > "Relax" in this context essentially means: "hey there, function, chill on this "horse" business a bit - it might be a large dog, after all".
 
-So the output might look like this:
+The output might look like this:
 
 ![bar chart of probabilities, with the highest spike by "horse"](img/activations_probs.png)
 
@@ -32,7 +32,7 @@ Now we have two problems left. First, we need our function to produce something 
 
 $$y_i = \frac{e^{x_i}} {\sum_j e^{x_j}}$$
 
-The second problem is to define a _loss function_ that compares our function’s probability output against a target label and tries to make them as similar as possible. To do this, we imagine that the true labels are actually single samples from a true probability distribution, which says "given this bunch of pixels, it’s a horse 90% of the time, a dog 6% of the time, etc…".  In this case, a reasonable way to compare two probability distributions, one of which is known, the other only provides samples, is cross entropy. The cross entropy between our function and "reality" will be minimized when the probabilities exactly match, in which case cross entropy will equal reality’s own entropy.
+The second problem is to define a _loss function_ that compares our function’s probability output against a target label and tries to make them as similar as possible. To do this, we imagine that the true labels are actually single samples from a true probability distribution, which says "given this bunch of pixels, it’s a horse 90% of the time, a dog 6% of the time, etc…".  In this case, a reasonable way to compare two probability distributions, one of which is known, the other only provides samples, is cross entropy. The cross entropy between our function and "reality" will be minimised when the probabilities exactly match, in which case cross entropy will equal reality’s own entropy.
 
 Putting this together, we apply softmax then take cross entropy against a single target sample $t$, which is the _softmax cross entropy_ loss function:
 
@@ -80,7 +80,7 @@ Dot-product this target vector with our log-probabilities, negate, and we get th
 
 ### The backward pass
 
-Now we can get to the real business of the loss function. The point of the loss is really to provide gradients to update the parameters in our model. Let’s walk through back through the gradients.
+Now we can get to the real business of the loss function. The point of the loss is to provide gradients to update the parameters in our model. Let’s walk through back through the gradients.
 
 The first step is to get gradients with respect to log-probabilities. This is easy - from the lookup (or dot product) and negation, we get:
 
@@ -92,7 +92,7 @@ Next, we backpropagate through log-softmax to find the gradient with respect to 
 
 ![bar chart of gradients for airplane, automobile, horse etc. with "horse" below the axis, everything else above](img/gradients_scores.png)
 
-This says that if you increased the score of "dog", the loss would increase. This is because of the softmax normalization term - if you increased the "dog" score, all other log-probabilities would decrease by the same amount, which means the "horse" log-probability would decrease (and the loss increases).
+This says that if you increased the score of "dog", the loss would increase. This is because of the softmax normalisation term - if you increased the "dog" score, all other log-probabilities would decrease by the same amount, which means the "horse" log-probability would decrease and the loss increases.
 
 If we check the gradient equation, we notice a couple of interesting things:
 
@@ -102,9 +102,9 @@ Here, $p_i$ is the (softmax-ed) predicted probability of class $i$ ($p_i = \math
 
 The second thing to notice is that the gradient must sum to zero ($\sum_i p_i =\\! 1$ and $\sum_i \delta_{it} = 1$). This means that the gradient below the axis for the correct class is balanced by the same total gradient (spread across all other classes) above the axis.
 
-Finally, the magnitude of the gradient depends on the probability of the target class, as the total probability above and below the axis is $1-p_t$. This makes intuitive sense - if the probability of the target class is already 1, the loss has already been minimized, so no update is needed. But if the probability of the correct class is small, the model should get a large update.
+Finally, the magnitude of the gradient depends on the probability of the target class, as the total probability above and below the axis is $1-p_t$. This makes intuitive sense - if the probability of the target class is already 1, the loss has already been minimised, so no update is needed. But if the probability of the correct class is small, the model should get a large update.
 
-These observations can motivate some variations on softmax cross entropy. One tries to provide positive updates to more classes with a richer target distribution ([teacher-student training](../2-teacher/article.html)). Another tries to optimize the computation by using sparse negative updates for incorrect classes ([sampled softmax](../3-sampled/article.html)).
+These observations can motivate some variations on softmax cross entropy. One tries to provide positive updates to more classes with a richer target distribution ([teacher-student training](../2-teacher/article.html)). Another tries to optimise the computation by using sparse negative updates for incorrect classes ([sampled softmax](../3-sampled/article.html)).
 
 ## Wrap up
 

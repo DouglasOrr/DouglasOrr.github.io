@@ -10,7 +10,7 @@ In this article, we'll think through the core idea of teacher-student training, 
 
 ## Core idea
 
-When we looked at the softmax cross entropy loss function with a one-hot target, we saw that the update looked "spiky". Each example in a batch contributes a large gradient spike to increase the score of the correct label, and a flatter gradient across all other labels. If we look at any individual example, our loss is trying to make the target probability 1, and everything else 0 - this would minimize the loss for that example.
+When we looked at the softmax cross entropy loss function with a one-hot target, we saw that the update looked "spiky". Each example in a batch contributes a large gradient spike to increase the score of the correct label, and a flatter gradient across all other labels. If we look at any individual example, our loss is trying to make the target probability 1, and everything else 0 - this would minimise the loss for that example.
 
 But there's a conflict here - we don't actually expect, or even want, this spiky output from our model. Instead, we'd expect an output to "hedge it's bets" a bit. For example, given this image:
 
@@ -20,9 +20,9 @@ You could expect a model to predict something like "horse 80%, dog 20%". But if 
 
 ![bar chart of probabilities, with a single spike on "horse"](img/target_hard.png)
 
-This means that the prediction "horse 100%, dog 0%" would minimize softmax cross entropy loss, since it is actually a picture of a horse. Intuitively, this seems a bit over-confident.
+This means that the prediction "horse 100%, dog 0%" would minimise softmax cross entropy loss, since it is actually a picture of a horse. Intuitively, this seems a bit over-confident.
 
-When training with softmax cross entropy loss, we can mitigate this problem by making sure there is enough input data, that examples well-shuffled into batches, and there are _regularizers_ such as dropout that prevent the model from becoming over-confident. But teacher-student training provides another option.
+When training with softmax cross entropy loss, we can mitigate this problem by making sure there is enough input data, that examples well-shuffled into batches, and there are regularisers such as dropout that prevent the model from becoming over-confident. But teacher-student training provides another option.
 
 **Teacher-student training provides a richer and more realistic target distribution than a single spike.** Instead of training the model to predict "horse 100%, dog 0%", it can train the model to predict "horse 80%, dog 20%" on a single example. Given a target distribution, we can still use softmax cross entropy as a loss function - the only difference is that the target is not a single-sample "hard" spike but a full "soft" distribution over all classes, like this:
 
@@ -47,11 +47,11 @@ L(x, t) = \mathrm{CE}\left(\alpha \cdot \mathrm{teacher}(x) + (1-\alpha)\cdot\de
 \label{eqn:loss}
 \end{equation}
 
-Where $CE(t,s)$ is the softmax cross entropy loss function between target distribution $t$ and predicted scores $s$, and $\alpha$ is an interpolation coefficient (usually a fixed hyperparameter) that interpolates between plain one-hot loss ($\alpha\\!=\\!0$) and pure teacher matching ($\alpha\\!=\\!1$). Note $\delta_{t*}$ is the kronecker delta, i.e. a one-hot vector at index $t$.
+Where $CE(t,s)$ is the softmax cross entropy loss function between target distribution $t$ and predicted scores $s$, and $\alpha$ is an interpolation coefficient (usually a fixed hyperparameter) that interpolates between plain one-hot loss ($\alpha\\!=\\!0$) and pure teacher matching ($\alpha\\!=\\!1$). Note $\delta_{t*}$ is the Kronecker delta, i.e. a one-hot vector at index $t$.
 
 ### Why bother?
 
-One problem with teacher-student training is that you have to train a teacher network as well as the student. If the teacher and student are exactly the same network, except for initialization, it all seems a bit pointless! We could reasonably assume the student will only ever match the performance of the teacher, although it should get there faster. Since we had to train the teacher network anyway, we may as well just use that, and forget about training the student entirely. It'd perform just as well, and save overall training time.
+One problem with teacher-student training is that you have to train a teacher network as well as the student. If the teacher and student are exactly the same network, except for initialisation, it all seems a bit pointless! We could reasonably assume the student will only ever match the performance of the teacher, although it should get there faster. Since we had to train the teacher network anyway, we may as well just use that, and forget about training the student entirely. It'd perform just as well, and save overall training time.
 
 The usual way through this is to train networks of different sizes. Experiments show that you can get better results for a given student network by training with a larger teacher network, than if you train the student directly on the dataset. This means that you can get a network that's cheaper to query for predictions since it's smaller than the teacher, but has higher accuracy than a network trained directly. This is the origin of the term **knowledge distillation**. The superior knowledge of the richer teacher network can be distilled into the smaller student using the teacher-student objective.
 
@@ -94,7 +94,7 @@ _Note: an alternative (equivalent) implementation would be to use `T.nn.function
 
 _We'll skim over some of the fine details here, when they're common to plain (one-hot) softmax cross entropy - see [this description](../1-xent/article.html#what-does-it-do) for more on that._
 
-Our student produces scores. These are normalized using log-softmax for computing the loss, or softmax to get the prediction distribution:
+Our student produces scores. These are normalised using log-softmax for computing the loss, or softmax to get the prediction distribution:
 
 ![bar chart of probabilities, with the largest spike on "horse"](img/activations_probs.png)
 
@@ -127,7 +127,7 @@ A couple of observations. First, whatever happens, there is the same positive an
 
 That's teacher-student training, most commonly applied as knowledge distillation. It can be motivated as a less "spiky" objective than one-hot softmax cross entropy. It doesn't matter if you use KL divergence or cross entropy. We saw what kinds of gradients to expect, that even the correct class can receive a positive loss gradient, and the gradient is zero when the student agrees with the mixed target.
 
-The most common scenario for teacher-student is **optimizing for inference/predictions**, where we want maximum prediction quality for minimum prediction runtime. To do this we spend a bit more training time to first train a large teacher and then use the teacher-student objective to train a better compact student model than we could have done from scratch.
+The most common scenario for teacher-student is **optimising for inference/predictions**, where we want maximum prediction quality for minimum prediction runtime. To do this we spend a bit more training time to first train a large teacher and then use the teacher-student objective to train a better compact student model than we could have done from scratch.
 
 <ul class="nav nav-pills">
   <li class="nav-item">

@@ -10,7 +10,7 @@ In this article, we'll think through the core idea of the sampled softmax loss f
 
 ## Core idea
 
-When we looked at softmax cross entropy loss gradient updates, we saw both a narrow "spike" and a wider "forest". The spike is a strong negative gradient for the correct label (e.g. "horse"). The forest contains positive gradients for all other classes. We observed that the spike and the forest contain the same probability mass, but whereas the spike is concetrated on a single class, the forest is spread out over $N\\!-\\!1$ classes.
+When we looked at softmax cross entropy loss gradient updates, we saw both a narrow "spike" and a wider "forest". The spike is a strong negative gradient for the correct label (e.g. "horse"). The forest contains positive gradients for all other classes. We observed that the spike and the forest contain the same probability mass, but whereas the spike is concentrated on a single class, the forest is spread out over $N\\!-\\!1$ classes.
 
 It looked like this:
 
@@ -47,7 +47,7 @@ L(x, t) = -x_t + \log \left[ x_t + \sum_{\tilde{c} \sim q_c | c \ne t} e^{x_{\ti
 \label{eqn:loss}
 \end{equation}
 
-This still looks quite like a plain softmax cross-entropy loss. The key difference is that the sum is over the target and a fixed number of samples, rather than every class. The only other difference is an adjustment of class scores given to the softmax normalizer ($x' = x - \log (k\, q_{\tilde{c}} / (1 - q_t))$). We'll see what this adjustment does when we look at the gradients later.
+This still looks quite like a plain softmax cross-entropy loss. The key difference is that the sum is over the target and a fixed number of samples, rather than every class. The only other difference is an adjustment of class scores given to the softmax normaliser ($x' = x - \log (k\, q_{\tilde{c}} / (1 - q_t))$). We'll see what this adjustment does when we look at the gradients later.
 
 
 ## PyTorch implementation
@@ -142,7 +142,7 @@ We could now imagine what would happen if we kept repeating this with different 
 
 That's sampled softmax. It's a simple idea - we can save memory and computation by randomly sampling a few incorrect labels, rather than computing scores for all labels every single time. The equations weren't too bad, the regular softmax just needed a slight adjustment to balance out the sampling. Perhaps the worst bit was the code, which depends on the final layer of the model to make the most of the computational savings.
 
-I'd probably consider using sampled softmax if I have over 100,000 classes, or if my final classification layer dominates overall execution time or memory use. An obvious application is large word vocabularies, for example in language modelling. However, this has fallen slightly out of favour recently with the rise of subword tokenization schemes such as byte pair encoding and wordpiece. But it's still a useful tool to have in your box of loss functions.
+I'd probably consider using sampled softmax if I have over 100,000 classes, or if my final classification layer dominates overall execution time or memory use. An obvious application is large word vocabularies, for example in language modelling. However, this has fallen slightly out of favour recently with the rise of subword tokenisation schemes such as byte pair encoding and wordpiece. But it's still a useful tool to have in your box of loss functions.
 
 <ul class="nav nav-pills">
   <li class="nav-item">
@@ -159,6 +159,6 @@ I'd probably consider using sampled softmax if I have over 100,000 classes, or i
  - Comparison: [Candidate Sampling Algorithms](https://www.tensorflow.org/extras/candidate_sampling.pdf), _(TensorFlow authors)._
  - NCE notes: [Notes on Noise Contrastive Estimation and Negative Sampling](https://arxiv.org/pdf/1410.8251.pdf), _Dyer C._
  - Fundamentals: [Adaptive Importance Sampling to Accelerate Training of a Neural Probabilistic Language Model](https://wiki.inf.ed.ac.uk/twiki/pub/CSTR/ListenSemester2_2009_10/4443871.pdf), _Bengio Y, Senécal JS._
- - NCE: [Noise-contrastive estimation: A new estimation principle for unnormalized statistical models](http://proceedings.mlr.press/v9/gutmann10a/gutmann10a.pdf), _Gutmann M, Hyvärinen A._
- - Sharing noise: [Simple, fast noise-contrastive estimation for large rnn vocabularies](https://www.aclweb.org/anthology/N16-1145.pdf), _Zoph B, Vaswani A, May J, Knight K._
+ - NCE: [Noise-contrastive estimation: A new estimation principle for unnormalised statistical models](http://proceedings.mlr.press/v9/gutmann10a/gutmann10a.pdf), _Gutmann M, Hyvärinen A._
+ - Sharing noise: [Simple, fast noise-contrastive estimation for large RNN vocabularies](https://www.aclweb.org/anthology/N16-1145.pdf), _Zoph B, Vaswani A, May J, Knight K._
  - CIFAR-10: [Learning multiple layers of features from tiny images](https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf), _Krizhevsky A._

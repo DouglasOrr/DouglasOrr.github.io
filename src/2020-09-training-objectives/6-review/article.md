@@ -25,7 +25,7 @@ Please do have a play with it. Or even better, just throw this example away and 
 
  - _Explore the hyperparameters._ What do `alpha`, `n_samples`, `epsilon` and `entropy_weight` do?
  - Try to _train a deeper network._ E.g. ResNet18 from `torchvision`. Which objectives are harder to train?
- - Try _changing the step size or optimizer._ Are there better settings for certain objectives?
+ - Try _changing the step size or optimiser._ Are there better settings for certain objectives?
  - Try _removing the baseline from policy gradient._ How does it perform?
  - Can you _make the value function more consistent?_ I.e. so that the expected reward sums to one across actions. How does performance change?
 

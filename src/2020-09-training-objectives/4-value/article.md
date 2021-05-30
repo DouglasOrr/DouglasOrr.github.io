@@ -3,7 +3,7 @@ keywords: deep-learning,training,tutorial
 
 # Value Function Estimation
 
-Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimize a model indirectly, without being told the right answer during training.
+Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.
 
 This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a (deep learning) classifier. Having looked at minor variations on softmax cross entropy, this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.
 
@@ -17,7 +17,7 @@ The old game is **supervised learning for classification**. The goal is to predi
 ```
 # Supervised learning
   Find:         predict(x) -> y
-  To maximize:  sum [ metric(predict(x), y) ] over {(x, y)}_test
+  To maximise:  sum [ metric(predict(x), y) ] over {(x, y)}_test
   Given:        {(x, y)}_train
 ```
 
@@ -26,7 +26,7 @@ The new game is **multi-armed contextual bandit learning**. You're shown an imag
 ```
 # Multi-armed contextual bandit learning
   Find:         predict(x) -> a
-  To maximize:  sum [ reward(predict(x)) ]
+  To maximise:  sum [ reward(predict(x)) ]
   Given:        reward(a) after each step
 ```
 
@@ -58,7 +58,7 @@ The idea of value function estimation is to predict how much reward to expect fo
 
 We now solve the bandit problem indirectly, by learning a value function instead of an action predictor. The benefit is that it's now a supervised learning problem, since we are directly given the reward we should have predicted.
 
-The value function $f$ returns a vector of values $v$ for each action $a$, $v_a = f(x)$. Whenever we take an action & receive a reward $r$, we remember which action we took and optimize a loss function $L(v_a, r)$. In our example, the loss function will be binary cross entropy with a sigmoid nonlinearity, which is very similar to softmax cross entropy (seen [previously](../1-xent/article.md)), with two output classes.
+The value function $f$ returns a vector of values $v$ for each action $a$, $v_a = f(x)$. Whenever we take an action & receive a reward $r$, we remember which action we took and optimise a loss function $L(v_a, r)$. In our example, the loss function will be binary cross entropy with a sigmoid nonlinearity, which is very similar to softmax cross entropy (seen [previously](../1-xent/article.md)), with two output classes.
 
 ### Policies
 
@@ -151,7 +151,7 @@ We still need to choose an action, so we fire up our policy. We're using an epsi
 
 ![bar chart of policy probabilities between 0 and 1, with "horse" at 0.82, everything else at 0.02](img/policy.png)
 
-It might be somewhat surpising that we're just as likely to choose "truck" as "frog", but that's epsilon-greedy in action - only the best value matters.
+It might be somewhat surprising that we're just as likely to choose "truck" as "frog", but that's epsilon-greedy in action - only the best value matters.
 
 From now on we'll split and imagine two scenarios. One where we follow our greedy policy and pick "horse" and another where we follow the random policy and pick "frog". Let's recap our predicted value and see what reward we get:
 
