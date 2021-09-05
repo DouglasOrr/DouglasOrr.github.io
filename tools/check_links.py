@@ -8,7 +8,7 @@ import urllib.parse
 import urllib.request
 
 
-Link = collections.namedtuple('Link', ('href', 'tag', 'attr', 'path', 'line', 'column'))
+Link = collections.namedtuple("Link", ("href", "tag", "attr", "path", "line", "column"))
 
 
 class LinkCheckParser(html.parser.HTMLParser):
@@ -19,7 +19,7 @@ class LinkCheckParser(html.parser.HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         for attr, value in attrs:
-            if attr in {'src', 'href'}:
+            if attr in {"src", "href"}:
                 self.links.append(Link(value, tag, attr, self.path, *self.getpos()))
 
     @classmethod
@@ -33,22 +33,31 @@ class LinkCheckParser(html.parser.HTMLParser):
 def check_link(link, file_name, site_files):
     # Don't check fragment-ID mapping
     href = urllib.parse.urldefrag(link.href).url
-    if href.startswith('http'):
-        try:
-            urllib.request.urlopen(urllib.request.Request(href, method='HEAD')).close()
-            return True
-        except urllib.request.HTTPError as e:
-            return False
+    if href.startswith("http"):
+        for method in ["HEAD", "GET"]:
+            try:
+                # Setting the User-Agent doesn't sound right, but servers can be a
+                # bit antsy otherwise
+                urllib.request.urlopen(
+                    urllib.request.Request(
+                        href, method=method, headers={"User-Agent": "Mozilla/5.0"}
+                    ),
+                ).close()
+                return True
+            except urllib.request.HTTPError as e:
+                pass
+        return False
     else:
-        if href == '':
+        if href == "":
             local_path = file_name
-        elif href == '/':
-            local_path = 'index.html'
-        elif href.startswith('/'):
+        elif href == "/":
+            local_path = "index.html"
+        elif href.startswith("/"):
             local_path = link.href[1:]
         else:
             local_path = os.path.normpath(
-                os.path.join(os.path.dirname(file_name), link.href))
+                os.path.join(os.path.dirname(file_name), link.href)
+            )
         return local_path in site_files
 
 
@@ -60,21 +69,23 @@ def check_links(root):
     }
     broken = []
     for file_name in site_files:
-        if os.path.splitext(file_name)[-1] == '.html':
+        if os.path.splitext(file_name)[-1] == ".html":
             path = os.path.join(root, file_name)
             for link in LinkCheckParser.get_links(path):
                 if not check_link(link, file_name, site_files):
                     broken.append(link)
     if broken:
-        print('Error! broken links:')
+        print("Error! broken links:")
         for link in broken:
-            print(f'    <{link.tag} {link.attr}="{link.href}">,'
-                  f' in {link.path}, line {link.line} column {link.column}')
+            print(
+                f'    <{link.tag} {link.attr}="{link.href}">,'
+                f" in {link.path}, line {link.line} column {link.column}"
+            )
     return len(broken)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('root', help='root path to site')
+    parser.add_argument("root", help="root path to site")
     args = parser.parse_args()
     exit(check_links(args.root))
