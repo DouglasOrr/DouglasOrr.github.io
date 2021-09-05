@@ -1,24 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="author" content="Douglas Orr">
-    <meta name="keywords" content="C++,Java,Javascript,unique,distinct,deduplication,hashset">
-    <link rel="stylesheet" href="/css/lib.css">
-    <link rel="stylesheet" href="/css/custom.css">
-    <script type="text/javascript" src="/js/custom.js" defer></script>
-    <script type="text/javascript" src="/js/lib.js" defer></script>
-    <title>Hash vs Sort [2]</title>
-  </head>
-  <body>
-    <nav class="navbar navbar-dark bg-dark">
-      <a class="navbar-brand" href="/">Doug's Diversions</a>
-    </nav>
-    <div class="container dd-root">
-      <div class="row">
-        <div class="col">
-          <h1 id="hash-vs-sort-91part-293">Hash vs sort [part 2]</h1>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Douglas Orr">
+  <meta name="keywords" content="C++,Java,Javascript,unique,distinct,deduplication,hashset">
+  <link rel="stylesheet" href="/css/lib.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script type="text/javascript" src="/js/custom.js" defer></script>
+  <script type="text/javascript" src="/js/lib.js" defer></script>
+  <title>Hash vs Sort [2]</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Doug's Diversions</a>
+  </nav>
+  <div class="container dd-root">
+    <div class="row">
+      <div class="col">
+        <h1 id="hash-vs-sort-part-2">Hash vs sort [part 2]</h1>
 <p><a href="../2019-09-hash-vs-sort/article.html">[Part 1]</a>, <strong>[Part 2]</strong></p>
 <p>In part 1, we saw two algorithms for finding unique items in a collection - <em>sort-unique</em> and <em>hash-unique</em>. After benchmarking them in C++ we found that while <em>sort-unique</em> was reasonably well-behaved (performing quite predictably), <em>hash-unique</em> had a stepped curve (linked to the CPU cache hierarchy) and a surprisingly high cost per unique item (linked with allocation). We will noe extend our work of part 1 in two areas - trying to see if we can improve on <em>hash-unique</em>, and benchmarking the two original methods in <em>Java</em> and <em>Javascript</em>, to check that our results don't only apply to C++.</p>
 <h2 id="fixing-hash-unique">"Fixing" hash-unique</h2>
@@ -113,8 +115,17 @@ return Array.from(unique);</code></pre>
 <p>In dynamic languages, it is often more important to use built-in methods where possible than to achieve peak algorithmic efficiency, and this seems to be the case with Javascript. Even in cases where (if we were in C++/Java), <em>sort-unique</em> should be faster, <em>hash-unique</em> is faster in Javascript due to the efficiency of the library implementations of common data structures and algorithms.</p>
 <p><strong>Using a specialised "one-off unique" (rather than "maintain unique") can speed up <em>hash-unique</em></strong></p>
 <p>Since we know all the items that are going to be added to the hash set in advance, we can construct an array with enough space allocated for every item in the original (and estimate an appropriate number of buckets). This means we never need to reallocate buckets or space for items (and items in a hash bucket can be contiguous in memory), which can give better performance.</p>
-        </div>
       </div>
     </div>
-  </body>
+    <div class="row">
+      <div class="dd-footer">
+        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
+          those of any employer or other organization, past or present.</p>
+        <p>Please let me know of errors or missing references by <a
+            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
 </html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Douglas Orr">
+  <meta name="keywords" content="deep-learning,visualisation,rnn,nlp">
+  <link rel="stylesheet" href="/css/lib.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script type="text/javascript" src="/js/custom.js" defer></script>
+  <script type="text/javascript" src="/js/lib.js" defer></script>
+  <title>My phone case, the hidden state of an RNN</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Doug's Diversions</a>
+  </nav>
+  <div class="container dd-root">
+    <div class="row">
+      <div class="col">
+        <h1 id="my-phone-case-the-hidden-state-of-an-rnn">My phone case, the hidden state of an RNN</h1>
+<p>What I needed was a new phone case. But I wanted a case that declares “my owner is a nerdy deep learning engineer”. So I made a visualisation of an RNN and had it printed, and I’m quite happy with it. This post is the origin story of this case, or, how to mash together a book, a deep learning library, some free computer time and a layout algorithm to get a pretty bunch of pixels.</p>
+<p>Here’s the final product. Not to everyone’s taste, I’m sure, but you’ve gotta love your own.</p>
+<p><img src="img/phone_case_photo_post.jpg" width="50%" alt="photo of a phone with a blue and white specked pattern on the case" /></p>
+<h2 id="vision">Vision</h2>
+<p>My old phone case was battered and broken, and I wanted something a little different to replace it, an image related to my craft of deep learning for natural language processing (NLP).</p>
+<p>I had to decide what to visualise, the attention maps of a <a href="https://arxiv.org/abs/1706.03762">Transformer</a> or the hidden state of an <a href="http://www.wildml.com/2015/09/recurrent-neural-networks-tutorial-part-1-introduction-to-rnns/">recurrent neural network</a> (RNN). Transformers are wonderful beasts, well-connected powerhouses of NLP and oh so hyped. But I have a soft spot for old-fashioned RNNs. One interesting thing about RNNs is that they have an information bottleneck. An RNN is able to summarise the whole history of what it has read in a single vector, called the hidden state. <strong>I wanted to see how this state evolves over time</strong>.</p>
+<p>A hidden state is usually a vector of real numbers. But to give my RNN a harder job, I restricted it to a <strong>binary vector</strong> of {-1, +1}. So I would allow my RNN only 128 bits to store a memory of what it has already seen and provide a signal to predict the next character. Maybe the real reason was I only wanted to pick two colours.</p>
+<p>The end result should be a grid of pixels like this:</p>
+<p><img alt="diagram showing a grid of hidden states by characters in text" class="img-fluid" src="img/phone_case_diagram.jpg" /></p>
+<h2 id="training-a-model">Training a model</h2>
+<p>Modeling and training was mostly standard for a <a href="http://karpathy.github.io/2015/05/21/rnn-effectiveness/">character RNN</a>, so here are the key points before I talk about the interesting bits:</p>
+<ul>
+<li><strong>Task</strong>: Autoregressive forward character language modeling</li>
+<li><strong>Dataset</strong>: The Bible (KJV)</li>
+<li><strong>Vocabulary</strong>: All Unicode characters in dataset</li>
+<li><strong>Training/validation split</strong>: By book, validation={Romans}, training={others}</li>
+<li><strong>Optimisation</strong>: Adam, LR=10<sup>-3</sup>, batch=32, sequence length=512, steps=10<sup>4</sup></li>
+<li><strong>Framework</strong>: PyTorch</li>
+<li><strong>Platform</strong>: Google Colab (GPU)</li>
+</ul>
+<p>The fun bit was trying to learn a binary hidden state. It’s easy to make a binary nonlinearity in PyTorch, <code>T.sign(x)</code> will do it. The problem is that there’s no gradient flow. If you look at the sign function the problem is obvious:</p>
+<p><img alt="graph of torch.sign(x), an upwards step" class="img-fluid" src="img/sign_fwd.png" /></p>
+<p>The gradient is zero everywhere, except at x=0, where it’s undefined. To fix this, I relaxed the backward pass to:</p>
+<p><img alt="graph of abs(x) less than or equal to 1, a square pulse around x=0" class="img-fluid" src="img/sign_bwd_relaxed.png" /></p>
+<p>This was a total cheat, I lied about my gradient to autograd and I have no excuse. But this is deep learning so I got away with it and the model still converged. I think what happens is that the fake gradients help the optimiser explore the transition around x=0. Maybe if things went badly I’d see some oscillation, but in this case it all turned out OK.</p>
+<p>Here’s what that looks like in PyTorch:</p>
+<pre><code class="language-python">class RelaxedBinaryGate(T.autograd.Function):
+   @staticmethod
+   def forward(ctx, input):
+       ctx.save_for_backward(input)
+       return T.sign(input)
+
+   @staticmethod
+   def backward(ctx, grad_output):
+       input, = ctx.saved_tensors
+       return grad_output * (T.abs_(input) &lt;= 1)</code></pre>
+
+<p>I used this nonlinearity in a RNN cell based on the recurrent highway network,</p>
+<p>$$\begin{align}
+h^{t+1} &amp;= \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\
+\mathrm{carry}, \mathrm{update}, \mathrm{candidate} &amp;= \mathrm{split} \left( U h^t + W x^t + b \right),
+\end{align}$$</p>
+<p>where $\sigma(z)$ is the logistic sigmoid nonlinarity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:</p>
+<p><img src="img/binary_rhn_model.png" width="70%" alt="model diagram showing a stack: embed, RNN, FFN, FFN, Linear, Cross Entropy Loss" /></p>
+<p>After a bit of tinkering it worked. Final validation performance was 1.9 bits/char, which is bad, but it's at least achieving something with the hidden state. It’s easy to beat this figure with regular nonlinearities, stacked RNNs, wider hidden states, etc., but that’s not the game!</p>
+<h2 id="sorting-hidden-units">Sorting hidden units</h2>
+<p>I chose some of my favourite verses to feed into the model, <a href="https://www.biblegateway.com/passage/?search=romans+1%3A16-17&amp;version=KJV">Romans 1:16-17</a>, and saved the binary hidden state after each character. It looked like this:</p>
+<p><img alt="grid of blue and white pixels with some correlation, but quite unstructured" class="img-fluid" src="img/phone_case_pattern_unordered.png" /></p>
+<p>Each of the 128 rows are hidden units, and each of the 274 columns is a character in the verse. I thought this should be it. But I had forgotten that the ordering of rows in this picture is arbitrary. As with most neural networks, I could permute a few matrices in my model and the order of the hidden components would change, even though the model behaves identically. So the question arose: <strong>if I can choose any order, which is the most beautiful or insightful?</strong></p>
+<p>The obvious thing is to try to put similar hidden components together, so I had a play around with that. It took me a while to realise, but it turns out I was inadvertently trying to solve the <strong>travelling salesman problem</strong> (TSP). If I had taken the time to write it out, I was trying to solve this optimisation:</p>
+<p>&emsp; Choose a permutation of indices $Z$ to maximise $\sum_i(\mathrm{similarity}(x_{z_i}, x_{z_{i+1}}))$.</p>
+<p>After finally recognising this was a TSP, I looked for approximate solutions and tried <a href="https://stackoverflow.com/questions/25585401/travelling-salesman-in-scipy">this one from stack overflow</a>. But in the end I went for this greedy algorithm which was most visually appealing:</p>
+<pre><code class="language-none">solution[0] = argmin(mean(states))
+solution[1] = argmax(mean(states))
+for next &lt;- states ordered by (abs . mean) ascending
+    dest = argmax_{i} [
+        similarity(solution_{i-1}, dest) + similarity(dest, solution_{i})
+        - similarity(solution_{i-1}, solution_{i})
+    ]
+    solution &lt;- solution[:dest] + [next] + solution[dest:]
+end</code></pre>
+
+<p>The idea is to first pick a fixed start and end and an overall order for considering states. Then at each step, insert the next state at the location with the best total similarity. This algorithm gave me my row order, so finally, I was done:</p>
+<p><img alt="grid of blue and white pixels with some correlation, with more visible structure" class="img-fluid" src="img/phone_case_pattern.png" /></p>
+<p>I'm not sure there's much substantial insight to be gained from this visualisation, but it does the job of decorating a phone. Hidden units in this model show strong temporal correlation - the states are somewhat "sticky" (looking left-right along a single row). But this is no surprise given the RHN cell definition, which bakes this into the update rule. Also, some groups of units transition at the same point in time (looking up-down along a single column), an effect that is enhanced by the similarity-based row ordering.</p>
+<h2 id="final-thoughts">Final thoughts</h2>
+<p>All that remained was to get it printed. I used <a href="https://uk.casestation.com/">this company</a> (no affiliation) and it seems well done but I’m sure there are many other good options.</p>
+<p>As you’ve probably gathered, I’m very happy with my case. Making it has taught me that I should step back early and think about the problem I’m working on. Who knows, it might be NP-hard. I’ve also learnt that I can lie about my gradient with impunity, the optimizer can muddle through. You’ve got to love deep learning!</p>
+<hr />
+<h2 id="references-materials">References &amp; materials</h2>
+<ul>
+<li>Training notebook: <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb">GitHub</a>, <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb">Colab</a></li>
+<li>Visualisation notebook: <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb">GitHub</a>, <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb">Colab</a></li>
+<li>Transformer: <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>, <em>Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez A N, Kaiser Ł, Polosukhin I.</em></li>
+<li>RNN (LM): <a href="https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf">Recurrent neural network based language model</a>, <em>Mikolov T, Karafiát M, Burget L, Černocký J, Khudanpur S.</em></li>
+<li>RHN: <a href="https://arxiv.org/abs/1607.03474">Recurrent highway networks</a>, <em>Zilly J G, Srivastava R K, Koutnık J, Schmidhuber J.</em></li>
+</ul>
+      </div>
+    </div>
+    <div class="row">
+      <div class="dd-footer">
+        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
+          those of any employer or other organization, past or present.</p>
+        <p>Please let me know of errors or missing references by <a
+            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
