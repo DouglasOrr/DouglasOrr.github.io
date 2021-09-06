@@ -60,10 +60,10 @@
 
 <p>I used this nonlinearity in a RNN cell based on the recurrent highway network,</p>
 <p>$$\begin{align}
-h^{t+1} &amp;= \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\
-\mathrm{carry}, \mathrm{update}, \mathrm{candidate} &amp;= \mathrm{split} \left( U h^t + W x^t + b \right),
+&amp;h^{t+1} = \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\
+&amp;\mathrm{carry}, \mathrm{update}, \mathrm{candidate} = \mathrm{split} \left( U h^t + W x^t + b \right),
 \end{align}$$</p>
-<p>where $\sigma(z)$ is the logistic sigmoid nonlinarity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:</p>
+<p>where $\sigma(z)$ is the logistic sigmoid nonlinearity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:</p>
 <p><img src="img/binary_rhn_model.png" width="70%" alt="model diagram showing a stack: embed, RNN, FFN, FFN, Linear, Cross Entropy Loss" /></p>
 <p>After a bit of tinkering it worked. Final validation performance was 1.9 bits/char, which is bad, but it's at least achieving something with the hidden state. It’s easy to beat this figure with regular nonlinearities, stacked RNNs, wider hidden states, etc., but that’s not the game!</p>
 <h2 id="sorting-hidden-units">Sorting hidden units</h2>
@@ -100,8 +100,8 @@ end</code></pre>
 </ul>
       </div>
     </div>
-    <div class="row">
-      <div class="dd-footer">
+    <div class="row dd-footer">
+      <div class="col">
         <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
           those of any employer or other organization, past or present.</p>
         <p>Please let me know of errors or missing references by <a
