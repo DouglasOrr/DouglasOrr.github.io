@@ -63,8 +63,8 @@ class RelaxedBinaryGate(T.autograd.Function):
 I used this nonlinearity in a RNN cell based on the recurrent highway network,
 
 $$\begin{align}
-h^{t+1} &= \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\\\
-\mathrm{carry}, \mathrm{update}, \mathrm{candidate} &= \mathrm{split} \left( U h^t + W x^t + b \right),
+&h^{t+1} = \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\\\
+&\mathrm{carry}, \mathrm{update}, \mathrm{candidate} = \mathrm{split} \left( U h^t + W x^t + b \right),
 \end{align}$$
 
 where $\sigma(z)$ is the logistic sigmoid nonlinarity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:
