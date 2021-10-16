@@ -167,7 +167,7 @@ class Builder:
         (
             "js/lib.js",
             [
-                "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js",
+                "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js",
                 "https://cdn.jsdelivr.net/npm/prismjs@1.21.0/prism.js",
             ]
             + [
@@ -178,7 +178,7 @@ class Builder:
     ]
     SRC_TEMPLATE = "template.html"
     SRC_IGNORE = {".ipynb_checkpoints"}
-    SRC_COPY = {".png", ".svg", ".css", ".js"}
+    SRC_COPY = {".png", ".jpg", ".svg", ".css", ".js"}
 
     class Error(Exception):
         def __init__(self, path, description):

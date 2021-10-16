@@ -8,7 +8,7 @@ My grab bag of various diversions/essays about machine learning and software eng
 
 ## Index
 
-<a id="classifier-training-objectives">2020-09 - How to train your classifier - an introduction to deep learning objectives</a>
+2020-09 - <a id="classifier-training-objectives">How to train your classifier - an introduction to deep learning objectives</a>
 
  1. [Softmax Cross Entropy Loss](2020-09-training-objectives/1-xent/article.md)
  2. [Teacher-Student Training](2020-09-training-objectives/2-teacher/article.md)
@@ -16,6 +16,8 @@ My grab bag of various diversions/essays about machine learning and software eng
  4. [Value Function Estimation](2020-09-training-objectives/4-value/article.md)
  5. [Policy Gradient Estimation](2020-09-training-objectives/5-policy/article.md)
  6. [Review - try them for yourself](2020-09-training-objectives/6-review/article.md)
+
+2021-09 - [My phone case, the hidden state of an RNN](2021-09-phone-case/article.md)
 
 2020-03 - [Write code for humans, design data for machines \[part 1\]](2020-03-data-for-machines/article.md) [\[part 2\]](2020-03-data-for-machines-2/article.md)
 
