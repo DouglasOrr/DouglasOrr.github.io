@@ -9,7 +9,7 @@ We've met softmax cross entropy, teacher-student training, sampled softmax, valu
 
 ## Demo code
 
-The demo can be found [on GitHub]() or opened directly [in Google Colab]().
+The demo can be found [on GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-10-training-objectives/training_objectives.ipynb) or opened directly [in Google Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-10-training-objectives/training_objectives.ipynb).
 
 It follows our running example of training a classifier for small image patches on the CIFAR10 dataset, using PyTorch. If you run the code as-is, it should successfully train a model using each objective. The parameters have been chosen to give reasonable performance in each case.
 
