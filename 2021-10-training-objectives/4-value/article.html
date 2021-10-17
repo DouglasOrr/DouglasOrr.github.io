@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Douglas Orr">
+  <meta name="keywords" content="deep-learning,training,tutorial">
+  <link rel="stylesheet" href="/css/lib.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script type="text/javascript" src="/js/custom.js" defer></script>
+  <script type="text/javascript" src="/js/lib.js" defer></script>
+  <title>Value Function Estimation</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Doug's Diversions</a>
+  </nav>
+  <div class="container dd-root">
+    <div class="row">
+      <div class="col">
+        <h1 id="value-function-estimation">Value Function Estimation</h1>
+<p>Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.</p>
+<p>This is part of our series on <a href="/index.html#classifier-training-objectives">training objectives</a>, where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.</p>
+<h2 id="the-new-game">The new game</h2>
+<p>Before we look at value function estimation, we need to understand that it isn't "playing the same game" as softmax cross entropy.</p>
+<p>The old game is <strong>supervised learning for classification</strong>. The goal is to predict the correct label "airplane" or "automobile" or "bird" for each image in a test. Your score is the percentage of images correctly labelled, given some unknown target labelling. To prepare for the test, you're given a large set of images, alongside their target labels, which you're free to use in any way you like.</p>
+<pre><code class="language-none"># Supervised learning
+  Find:         predict(x) -&gt; y
+  To maximise:  sum [ metric(predict(x), y) ] over {(x, y)}_test
+  Given:        {(x, y)}_train</code></pre>
+
+<p>The new game is <strong>multi-armed contextual bandit learning</strong>. You're shown an image and must choose "airplane", "automobile" or "bird". After choosing one, you are given a reward if you got it right, and no reward if you got it wrong. You aren't told the target answer, only whether you got a reward or not. There is also no separate test phase, training &amp; test are a single phase, and you're graded as you learn.</p>
+<pre><code class="language-none"># Multi-armed contextual bandit learning
+  Find:         predict(x) -&gt; a
+  To maximise:  sum [ reward(predict(x)) ]
+  Given:        reward(a) after each step</code></pre>
+
+<h2 id="core-idea">Core idea</h2>
+<p>Value function estimation is a technique designed for bandit problems and their more complex cousin, reinforcement learning. But in this article, we'll apply it back to our standard supervised learning problem we've used so far in our series. This means we can focus on the new type of loss without having to worry about other aspects of bandits / RL.</p>
+<p>The core problem we need to solve is to create a <em>reward-based loss</em> rather than a <em>target-based loss</em>. A reward-based loss is given feedback for the chosen prediction "was I right or wrong?", while a target-based loss is given the correct answer "was it a horse, cat, bird, etc?" Evidently, a reward-based loss is a harder problem since you're given less information to help you learn.</p>
+<p>For example, you're shown this image:</p>
+<p><img alt="image of a horse" class="img-fluid" src="img/example_horse.png" /></p>
+<p>Your prediction for this image is "dog". With a target-based loss, you're told:</p>
+<blockquote class="blockquote">
+<p>"It's a horse."</p>
+</blockquote>
+<p>With a reward-based loss, you're only told:</p>
+<blockquote class="blockquote">
+<p>"No, it's not a dog."</p>
+</blockquote>
+<p>So a reward based loss makes the task harder: when you get it wrong you just have to keep guessing until you get it right. Since these predictions now interact with the loss, we call them <em>actions</em>. An action is just a prediction with consequences.</p>
+<h3 id="value-functions">Value functions</h3>
+<p>The idea of value function estimation is to predict how much reward to expect for each action you could take. For example, a value function could predict a large reward for choosing "horse" but a small possibility of reward for choosing "automobile". If you can train an accurate value function, finding the best action is easy - just choose the action with the largest predicted reward.</p>
+<blockquote class="blockquote">
+<p>Value function estimation means predicting how much reward to expect for each action you could take.</p>
+</blockquote>
+<p>We now solve the bandit problem indirectly, by learning a value function instead of an action predictor. The benefit is that it's now a supervised learning problem, since we are directly given the reward we should have predicted.</p>
+<p>The value function $f$ returns a vector of values $v$ for each action $a$, $v_a = f(x)$. Whenever we take an action &amp; receive a reward $r$, we remember which action we took and optimise a loss function $L(v_a, r)$. In our example, the loss function will be binary cross entropy with a sigmoid nonlinearity, which is similar to softmax cross entropy (seen <a href="../1-xent/article.html">previously</a>) with two output classes.</p>
+<h3 id="policies">Policies</h3>
+<p>The final thing we need is a way to choose actions based on values. This is called a <em>policy</em>. One possible policy is to always choose the one with the largest reward prediction:</p>
+<p>\begin{equation*}
+\hat{a} = \mathrm{argmax}_a \, \left[ \, f(x) \right]_a
+\end{equation*}</p>
+<p>This is a <em>greedy</em> policy, because it greedily chooses the best-looking option.</p>
+<p>Greedy policies like this suffer from a problem - it is easy for them to get stuck during training. Imagine we have a set of images that look quite similar to our model. After training a few images, "dog" has value 0.2, while "horse" still has an initial value 0.1. Using the greedy policy above, we would always choose "dog", and may not discover that "horse" has a much higher value for some of these images. The problem is a lack of exploration - since we always exploit our current best prediction we don't explore possibilities that may be even better.</p>
+<p>To address this, we can add random exploration. The simplest method is to randomly choose either to follow the greedy policy above or a uniform random policy. This is called an <em>epsilon-greedy</em> policy.</p>
+<p>\begin{equation}
+\hat{a} =
+\begin{cases}
+\mathrm{argmax}_a \, \left[ \, f(x) \right]_a &amp; \textrm{with probability } 1-\epsilon \\
+a \sim \mathrm{uniform}() &amp; \textrm{with probability } \epsilon
+\end{cases}
+\label{eqn:policy}
+\end{equation}</p>
+<p>Drawing it together, we'll need the following:</p>
+<ul>
+<li>A trainable value function that predicts a value for each action</li>
+<li>A policy that chooses actions based on values</li>
+<li>A loss function between predicted value and actual reward</li>
+</ul>
+<h2 id="pytorch-implementation">PyTorch implementation</h2>
+<p>A PyTorch implementation of value function estimation is reasonably straight-forward. The main difference versus supervised training is implementing a policy to select an action, and obtaining a reward to use as the target for a regular loss function.</p>
+<p><em>Note that this is a slightly odd example, since we're applying a bandit algorithm to a supervised learning problem - if we were solving a true bandit problem, the reward calculation be a more complex / completely separate system, for example a simulation or natural system.</em></p>
+<pre><code class="language-python">inputs, labels = ...
+model = ...
+epsilon = 0.2
+batch_size = inputs.shape[0]
+
+# 1. Predict values for each possible action
+value_logits = model(inputs)
+
+# 2. Use a policy to select an action &amp; obtain reward
+with T.no_grad():
+    actions = T.where(
+        T.rand(batch_size) &lt; epsilon,
+        T.randint(high=value_logits.shape[1], size=(batch_size,)),
+        T.argmax(value_logits, -1)
+    )
+    rewards = (actions == labels).float()
+
+# 3. Train the selected action&#x27;s value
+action_value_logits = value_logits[T.arange(batch_size), actions]
+loss = T.nn.functional.binary_cross_entropy_with_logits(
+    action_value_logits, rewards
+)
+print(float(loss))
+loss.backward()</code></pre>
+
+<p><strong>1. Predict values for each possible action:</strong> Nothing special here - we run our model and get a vector of value logits for each possible action. Hold on for an explanation of the term <em>logit</em>, for now we can think of them as scores.</p>
+<p><strong>2. Use a policy to select an action &amp; obtain reward:</strong> Implement an epsilon-greedy policy following equation \eqref{eqn:policy}, to choose one action for each element of a batch. In this case an action is just an integer. Then, obtain a reward for the chosen action, in this case by comparing with the known target label. This is all wrapped in a <code>T.no_grad()</code>, demonstrating that there is no gradient flow through this logic.</p>
+<p><strong>3. Train the selected action's value:</strong> From this point, it's just regular supervised learning. The only unsual thing is that there is only a target for one of the predicted values, corresponding to the action that was chosen in step 2. There is no loss or gradient for any other predicted value. The loss function is chosen to match the task. In this case the reward is either 0 (wrong prediction) or 1 (correct prediction), so binary cross entropy with a sigmoid nonlinearity is the obvious choice.</p>
+<h2 id="what-does-it-do">What does it do?</h2>
+<p>In the forward pass, we start with a vector of value <em>logits</em>, one for each action we could take. <a href="https://en.wikipedia.org/wiki/Logit">Logits</a> are similar to the scores provided to softmax cross entropy loss, but have an absolute scale. where logits $[-\infty, 0, +\infty]$ corresponds to the probabilities $[0, 0.5, 1]$.</p>
+<p>Here are our value logits for the horse image we saw earlier:</p>
+<p><img alt="bar chart of logits, with &quot;horse&quot; above the axis, everything else below with &quot;frog&quot; the largest negative value" class="img-fluid" src="img/activations_logits.png" /></p>
+<p>We can see most of them are below zero, but there is a positive logit for "horse". These are slightly hard to interpret in this form, so we can turn them into values, which are between 0 and 1, using the <a href="https://en.wikipedia.org/wiki/Logistic_function">logistic sigmoid function</a>:</p>
+<p><img alt="bar chart of values between 0 and 1, with &quot;horse&quot; at 0.8, &quot;frog&quot; at 0.2, and everythine else near 0" class="img-fluid" src="img/activations_values.png" /></p>
+<p>Now we can step into the imaginary shoes of our model and see what it's thinking when it sees this image.</p>
+<blockquote class="blockquote">
+<p>Hmm, if I choose "horse", I'm 85% confident in being right - I should get a good reward for that. If I choose "frog", I'm only 23% confident in being right - not so good. But "everything else is pretty much hopeless - there's virtually no chance it's a "truck"!</p>
+</blockquote>
+<p>You might notice the model isn't very logical - 85% chance of being right for "horse" + 23% chance of being right for "frog" = 108% chance of it being a "horse or frog". There is a simple fix for this, which we'll leave as an exercise for the reader.</p>
+<p>We still need to choose an action, so we fire up our policy. We're using an epsilon-greedy policy (equation \eqref{eqn:policy}) with $\epsilon=0.2$, so the total probability of each action looks like this:</p>
+<p><img alt="bar chart of policy probabilities between 0 and 1, with &quot;horse&quot; at 0.82, everything else at 0.02" class="img-fluid" src="img/policy.png" /></p>
+<p>It might be somewhat surprising that we're just as likely to choose "truck" as "frog", but that's epsilon-greedy in action - only the best value matters.</p>
+<p>From now on we'll split and imagine two scenarios. One where we follow our greedy policy and pick "horse" and another where we follow the random policy and pick "frog". Let's recap our predicted value and see what reward we get:</p>
+<p><img alt="two bar charts, one showing a predicted value for &quot;horse&quot; of 0.8, and a target value of 1, the other showing a predicted value for &quot;frog&quot; of 0.2 and a target value of 0" class="img-fluid" src="img/target.png" /></p>
+<p>On the left, we choose the correct action "horse", we get a reward of 1. Our loss function target is same as the reward. On the right, we choose an incorrect action "frog", and get a reward and loss target of 0. We now have a differentiable prediction and a target, so it looks ready for regular supervised learning.</p>
+<h3 id="the-backward-pass">The backward pass</h3>
+<p>If we pass these predictions and targets into a binary cross entropy loss, we get the following loss gradients with respect to the relevant action logit:</p>
+<p><img alt="two bar charts of the gradient of the value logit, one showing the negative gradient for &quot;horse&quot;, the other showing the positive gradient for &quot;frog&quot;" class="img-fluid" src="img/gradients.png" /></p>
+<p>On the left, when we choose "horse" we get a negative gradient to increase the value of "horse" and no gradient for any other action. On the right, when we choose "frog" we get a positive gradient to decrease the value of "frog" and no gradient for any other action. Since the gradient calculation isn't directly related to value function estimation, we won't go into full details here.</p>
+<p>Note that although we made ten predictions, we only get to train one of them, corresponding to the action our policy chose. We simply didn't get any reward feedback for any other action, so haven't learnt anything about them and cannot update their value functions.</p>
+<h2 id="wrap-up">Wrap up</h2>
+<p>Phew - that was quite a journey. We found a new game for our model to play, called multi-armed contextual bandit learning. This replaced the target-based loss with a reward-based loss, where we're only told if our guess was right, not what the right answer was. We looked at a simple way to solve this problem, where we learn a value function to predict how much reward we expect to get. We combined this with an epsilon-greedy policy to select actions.</p>
+<p>We applied this to a contrived problem of correctly labelling CIFAR-10 images. Since the dataset already contains a set of ground truth target labels there really is no practical point in making the problem harder using a reward-based loss rather than a target-based loss. But it makes for a simple example.</p>
+<p>Value function estimation is a simple and useful technique to help solve contextual bandit or reinforcement learning problems. Since it can be used with any policy and provides an interpretable value prediction, it's a handy component to incorporate into other learning algorithms e.g. policy gradient.</p>
+<ul class="nav nav-pills">
+  <li class="nav-item">
+    <a class="nav-link" href="../5-policy/article.html">Next - policy gradient estimation</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+  </li>
+</ul>
+
+<h2 id="references">References</h2>
+<ul>
+<li>Value functions in RL: <a href="https://papers.nips.cc/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html">Policy Gradient Methods for Reinforcement Learning with Function Approximation</a>, <em>Sutton S, McAllester D, Singh S, Mansour Y.</em></li>
+<li>CIFAR-10: <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Learning multiple layers of features from tiny images</a>, <em>Krizhevsky A, Hinton G.</em></li>
+</ul>
+      </div>
+    </div>
+    <div class="row dd-footer">
+      <div class="col">
+        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
+          those of any employer or other organization, past or present.</p>
+        <p>Please let me know of errors or missing references by <a
+            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>

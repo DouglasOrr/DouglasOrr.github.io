@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Douglas Orr">
+  <meta name="keywords" content="deep-learning,training,tutorial">
+  <link rel="stylesheet" href="/css/lib.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script type="text/javascript" src="/js/custom.js" defer></script>
+  <script type="text/javascript" src="/js/lib.js" defer></script>
+  <title>Classifier review</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Doug's Diversions</a>
+  </nav>
+  <div class="container dd-root">
+    <div class="row">
+      <div class="col">
+        <h1 id="how-to-train-your-classifier-review">How to train your classifier - review</h1>
+<p>This is the final part in our series on <a href="/index.html#classifier-training-objectives">training objectives</a>, exploring objectives you could use to train a deep learning classifier.</p>
+<p>We've met softmax cross entropy, teacher-student training, sampled softmax, value function estimation and policy gradients. We reviewed the core ideas and walked through a typical forward and backward pass. All that's remains is to provide some demo code, so you can play around with these at your leisure.</p>
+<h2 id="demo-code">Demo code</h2>
+<p>The demo can be found <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-10-training-objectives/training_objectives.ipynb">on GitHub</a> or opened directly <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-10-training-objectives/training_objectives.ipynb">in Google Colab</a>.</p>
+<p>It follows our running example of training a classifier for small image patches on the CIFAR10 dataset, using PyTorch. If you run the code as-is, it should successfully train a model using each objective. The parameters have been chosen to give reasonable performance in each case.</p>
+<ul>
+<li><code>softmax_cross_entropy</code> (<a href="../1-xent/article.html">blog</a>) trains quickly and reliably, it's the default choice for a reason!</li>
+<li><code>teacher_student</code> (<a href="../2-teacher/article.html">blog</a>) is as fast or faster than softmax cross-entropy (which it uses as teacher). Note that this example is a bit pointless, since the teacher is the same architecture as the student.</li>
+<li><code>sampled_softmax</code> (<a href="../3-sampled/article.html">blog</a>) is slower than full softmax cross-entropy. It can be improved by increasing the number of samples.</li>
+<li><code>value_function</code> (<a href="../4-value/article.html">blog</a>) trains relatively quickly (although still slower than full softmax cross-entropy), but can be unreliable. Recall that it's playing a harder game than previous techniques, a multi-armed contextual bandit problem.</li>
+<li><code>policy_gradient</code> (<a href="../5-policy/article.html">blog</a>) is slower than full softmax cross-entropy, and may be unreliable. The entropy weight hyperparameter can make a big difference.</li>
+</ul>
+<h3 id="playing-around">Playing around</h3>
+<p>Please do have a play with it. Or even better, just throw this example away and have a go at implementing the objectives yourself, maybe for another dataset or domain. But if you like to learn by tweaking, here are a few things you could try:</p>
+<ul>
+<li>Explore the hyperparameters. What do <code>alpha</code>, <code>n_samples</code>, <code>epsilon</code> and <code>entropy_weight</code> do?</li>
+<li>Try to train a deeper network. E.g. ResNet18 from <code>torchvision</code>. Which objectives are harder to train?</li>
+<li>Try changing the step size or optimiser. Are there better settings for certain objectives?</li>
+<li>Try removing the baseline from policy gradient. How does it perform?</li>
+<li>Can you make the value function more consistent? I.e. so that the expected reward sums to one across actions. How does performance change?</li>
+</ul>
+<ul class="nav nav-pills">
+  <li class="nav-item">
+    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+  </li>
+</ul>
+
+<h2 id="references">References</h2>
+<ul>
+<li><a href="https://pytorch.org/">PyTorch</a>.</li>
+<li>CIFAR-10: <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Learning multiple layers of features from tiny images</a>, <em>Krizhevsky A, Hinton G.</em></li>
+</ul>
+      </div>
+    </div>
+    <div class="row dd-footer">
+      <div class="col">
+        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
+          those of any employer or other organization, past or present.</p>
+        <p>Please let me know of errors or missing references by <a
+            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
