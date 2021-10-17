@@ -5,7 +5,7 @@ keywords: deep-learning,training,tutorial
 
 Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.
 
-This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a (deep learning) classifier. Having looked at minor variations on softmax cross entropy, this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.
+This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.
 
 
 ## The new game
@@ -58,7 +58,7 @@ The idea of value function estimation is to predict how much reward to expect fo
 
 We now solve the bandit problem indirectly, by learning a value function instead of an action predictor. The benefit is that it's now a supervised learning problem, since we are directly given the reward we should have predicted.
 
-The value function $f$ returns a vector of values $v$ for each action $a$, $v_a = f(x)$. Whenever we take an action & receive a reward $r$, we remember which action we took and optimise a loss function $L(v_a, r)$. In our example, the loss function will be binary cross entropy with a sigmoid nonlinearity, which is very similar to softmax cross entropy (seen [previously](../1-xent/article.md)), with two output classes.
+The value function $f$ returns a vector of values $v$ for each action $a$, $v_a = f(x)$. Whenever we take an action & receive a reward $r$, we remember which action we took and optimise a loss function $L(v_a, r)$. In our example, the loss function will be binary cross entropy with a sigmoid nonlinearity, which is similar to softmax cross entropy (seen [previously](../1-xent/article.md)) with two output classes.
 
 ### Policies
 
@@ -68,11 +68,11 @@ The final thing we need is a way to choose actions based on values. This is call
 \hat{a} = \mathrm{argmax}_a \, \left[ \, f(x) \right]_a
 \end{equation\*}
 
-This is called a _greedy_ policy, because it greedily chooses the best-looking option.
+This is a _greedy_ policy, because it greedily chooses the best-looking option.
 
-Greedy policies like this suffer from a problem - it is easy for them to get stuck during training. Imagine we have a set of images that look quite similar to our network. After training a few images, "dog" has value 0.2, while "horse" still has an initial value 0.1. Using the greedy policy above, we would always choose "dog", and may not discover that "horse" has a much higher value for some of these images. This problem is a lack of exploration - since we always exploit our current best prediction we don't explore possibilities that may be even better.
+Greedy policies like this suffer from a problem - it is easy for them to get stuck during training. Imagine we have a set of images that look quite similar to our model. After training a few images, "dog" has value 0.2, while "horse" still has an initial value 0.1. Using the greedy policy above, we would always choose "dog", and may not discover that "horse" has a much higher value for some of these images. The problem is a lack of exploration - since we always exploit our current best prediction we don't explore possibilities that may be even better.
 
-To address this, we can add random exploration. The simplest way is to randomly choose either to follow the greedy policy above or a simple uniform random policy. This is called an _epsilon-greedy_ policy.
+To address this, we can add random exploration. The simplest method is to randomly choose either to follow the greedy policy above or a uniform random policy. This is called an _epsilon-greedy_ policy.
 
 \begin{equation}
 \hat{a} =
@@ -85,7 +85,7 @@ a \sim \mathrm{uniform}() & \textrm{with probability } \epsilon
 
 Drawing it together, we'll need the following:
 
- - A value function network that predicts a value for each action
+ - A trainable value function that predicts a value for each action
  - A policy that chooses actions based on values
  - A loss function between predicted value and actual reward
 
@@ -122,9 +122,9 @@ print(float(loss))
 loss.backward()
 ```
 
-**1. Predict values for each possible action:** Nothing special here - we run our model and get a vector of value logits for each possible action. Hold on for an explanation of the word _logit_, for now think of them as scores.
+**1. Predict values for each possible action:** Nothing special here - we run our model and get a vector of value logits for each possible action. Hold on for an explanation of the term _logit_, for now we can think of them as scores.
 
-**2. Use a policy to select an action & obtain reward:** Implement an epsilon-greedy policy following equation \eqref{eqn:policy}, to choose one action for each element of a batch. In this case an action is just an integer. Then, obtain a reward for the chosen action, in this case by comparing with the known target label. This is all wrapped in a `T.no_grad()`, demonstrating that there is no gradient flow here.
+**2. Use a policy to select an action & obtain reward:** Implement an epsilon-greedy policy following equation \eqref{eqn:policy}, to choose one action for each element of a batch. In this case an action is just an integer. Then, obtain a reward for the chosen action, in this case by comparing with the known target label. This is all wrapped in a `T.no_grad()`, demonstrating that there is no gradient flow through this logic.
 
 **3. Train the selected action's value:** From this point, it's just regular supervised learning. The only unsual thing is that there is only a target for one of the predicted values, corresponding to the action that was chosen in step 2. There is no loss or gradient for any other predicted value. The loss function is chosen to match the task. In this case the reward is either 0 (wrong prediction) or 1 (correct prediction), so binary cross entropy with a sigmoid nonlinearity is the obvious choice.
 
@@ -141,11 +141,11 @@ We can see most of them are below zero, but there is a positive logit for "horse
 
 ![bar chart of values between 0 and 1, with "horse" at 0.8, "frog" at 0.2, and everythine else near 0](img/activations_values.png)
 
-Now we can step into the imaginary shoes of our network and see what it's thinking when it sees this image.
+Now we can step into the imaginary shoes of our model and see what it's thinking when it sees this image.
 
 > Hmm, if I choose "horse", I'm 85% confident in being right - I should get a good reward for that. If I choose "frog", I'm only 23% confident in being right - not so good. But "everything else is pretty much hopeless - there's virtually no chance it's a "truck"!
 
-You might notice the network isn't very logical - 85% chance of being right for "horse" + 23% chance of being right for "frog" = 108% chance of it being a "horse or frog". There is a simple fix for this, which we'll leave as an exercise for the reader.
+You might notice the model isn't very logical - 85% chance of being right for "horse" + 23% chance of being right for "frog" = 108% chance of it being a "horse or frog". There is a simple fix for this, which we'll leave as an exercise for the reader.
 
 We still need to choose an action, so we fire up our policy. We're using an epsilon-greedy policy (equation \eqref{eqn:policy}) with $\epsilon=0.2$, so the total probability of each action looks like this:
 
@@ -165,16 +165,14 @@ If we pass these predictions and targets into a binary cross entropy loss, we ge
 
 ![two bar charts of the gradient of the value logit, one showing the negative gradient for "horse", the other showing the positive gradient for "frog"](img/gradients.png)
 
-On the left, when we choose "horse" we get a negative gradient to increase the value of "horse" and no gradient for any other action. On the right, when we choose "frog" we get a positive gradient to decrease the value of "frog" and no gradient for any other action.
-
-_Since the gradient calculation isn't directly related to value function estimation, we won't go into full details here._
+On the left, when we choose "horse" we get a negative gradient to increase the value of "horse" and no gradient for any other action. On the right, when we choose "frog" we get a positive gradient to decrease the value of "frog" and no gradient for any other action. Since the gradient calculation isn't directly related to value function estimation, we won't go into full details here.
 
 Note that although we made ten predictions, we only get to train one of them, corresponding to the action our policy chose. We simply didn't get any reward feedback for any other action, so haven't learnt anything about them and cannot update their value functions.
 
 
 ## Wrap up
 
-Phew - that was quite a journey. We found a new game for our network to play, called multi-armed contextual bandit learning. This replaced the target-based loss with a reward-based loss, where we're only told if our guess was right, not what the right answer was. We looked at a simple way to solve this problem, where we learn a value function to predict how much reward we expect to get. We combined this with an epsilon-greedy policy to select actions.
+Phew - that was quite a journey. We found a new game for our model to play, called multi-armed contextual bandit learning. This replaced the target-based loss with a reward-based loss, where we're only told if our guess was right, not what the right answer was. We looked at a simple way to solve this problem, where we learn a value function to predict how much reward we expect to get. We combined this with an epsilon-greedy policy to select actions.
 
 We applied this to a contrived problem of correctly labelling CIFAR-10 images. Since the dataset already contains a set of ground truth target labels there really is no practical point in making the problem harder using a reward-based loss rather than a target-based loss. But it makes for a simple example.
 

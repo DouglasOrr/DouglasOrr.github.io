@@ -7,16 +7,16 @@ Policy gradient estimation is a popular technique for reinforcement learning (RL
 
 This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a deep learning classifier. In the last segment, we saw [value function estimation](../4-value/article.md), which can address similar problems to policy gradient estimation.
 
-Of all the algorithms we've visited in this series, I find policy gradients the most magical. I initially was surprised it can work at all. And thinking through it has helped me understand loss function design a little deeper. I hope it can pique your curiosity too!
+Of all the algorithms we've visited in this series, I find policy gradients the most magical. When first introduced to it, I was surprised it can work at all. And thinking through it has helped me understand loss function design a little deeper. I hope it can pique your curiosity too!
 
 
 ## Core idea
 
-We'll think through policy gradients used for guessing the correct label of an image. For example, given the image:
+We'll think through policy gradients for guessing the correct label of an image. For example, given the image:
 
 ![image of a horse](img/example_horse.png)
 
-The network should guess "horse".
+The model should guess "horse".
 
 _Note that this is an unusual application of policy gradients - you'd usually just use something simple like softmax cross entropy here._
 
@@ -26,9 +26,9 @@ Like [we saw with value functions](../4-value/article.html#the-new-game), policy
  - _reward_ - we're given a reward for taking each action, either 1 or 0; our objective is to maximise this reward
  - _policy_ - defines our method of choosing an action based on an input; this replaces the predictor from supervised learning
  - _expectation_ - an average value, computed based on samples coming from a distribution
- - _network_ - a differentiable function that can be trained by backpropagation
+ - _model_ - a differentiable function that can be trained by backpropagation
 
-So we want to choose actions to maximise expected reward. But the immediate problem is that we can't directly compute the gradient of the reward with respect to the actions predicted by our network. This is critical, since we need these gradients to get backpropagation started.
+So we want to choose actions to maximise expected reward. But the immediate problem is that we can't directly compute the gradient of the reward with respect to the actions predicted by our model. This is critical, since we need these gradients to get backpropagation started.
 
 > We want to choose actions to maximise expected reward.
 
@@ -61,7 +61,7 @@ This is the key result we will build upon. See the [Appendix](#appendix-policy-g
 
 The final step is to estimate the expectation $E_{\tilde{a} \sim \pi(a|x)}$ using a single sample $\tilde{a}$ from $\pi(a|x)$.
 
-This algorithm may not seem very remarkable at first glance. But recall that we're trying to optimise the output of the reward function $R$. Surprisingly, we do not need to know the gradient of $R$ to do this! There is no $\partial R / \partial a$ term.
+This trick may not seem very remarkable at first glance. But recall that we're trying to optimise the output of the reward function $R$. Surprisingly, we do not need to know the gradient of $R$ to do this! There is no $\partial R / \partial a$ term.
 
 Now we have everything we need for a policy gradient training algorithm. We just need to sample from our policy $\pi$ in the forward pass, obtain the reward and use equation \eqref{eqn:gradient} to pass a gradient back from the log-policy.
 
@@ -82,18 +82,18 @@ To use a baseline, we take a value function that is trained to predict the rewar
 
 Another problem with policy gradient approaches is that they can collapse to a solution and then get stuck in that solution, even if it is suboptimal.
 
-To see this, imagine a network early on in training that can't distinguish between "dog" and "horse" for a set of similar images. It first tries to suggest "dog" and gets a 0.5 reward on average. This is higher than the baseline's 0.1 expected reward, so the policy gradients act to increase the probability of "dog" and decrease everything else. Eventually, the probability of "dog" will be high and the probability of "horse" will be low, so it's unlikely that the policy will ever randomly sample "horse" and thereby notice that it's possible to get better rewards if you don't always choose "dog". It has got stuck in a simplistic solution and the policy makes it unlikely it will ever escape.
+To see this, imagine a model early on in training that can't distinguish between "dog" and "horse" for a set of similar images. It first tries to suggest "dog" and gets a 0.5 reward on average. This is higher than the baseline's 0.1 expected reward, so the policy gradients act to increase the probability of "dog" and decrease everything else. Eventually, the probability of "dog" will be high and the probability of "horse" will be low, so it's unlikely that the policy will ever randomly sample "horse" and thereby notice that it's possible to get better rewards if you don't always choose "dog". It has got stuck in a simplistic solution and the policy makes it unlikely it will ever escape.
 
-One way to help prevent this early collapse is to encourage the policy to choose from a multiple actions rather than collapsing to a single high-probability action. We can do this by adding another objective to maximise the entropy of the action distribution, $-\sum_a \pi_a \log \pi_a$. This is a kind of policy regularisation. It works because high-entropy policies by definition have not collapsed, so are more likely to explore the range of possible solutions.
+One way to help prevent this early collapse is to encourage the policy to choose from a multiple actions rather than collapsing to a single high-probability action. We can do this by adding another objective to maximise the entropy of the action distribution, $-\sum_a \pi_a \log \pi_a$. This is a kind of policy regularisation. It works because high-entropy policies have not collapsed by definition, so are more likely to explore the range of possible solutions.
 
-Policy regularisation can be tuned with a scale factor. Too low, and it will fail to prevent early collapse. Too high, and the network will fail to solve the problem, preferring instead the easy maximum-entropy solution of predicting flat policies.
+Policy regularisation can be tuned with a scale factor. Too low and it will fail to prevent early collapse. Too high and the model will fail to solve the problem, preferring instead the easy maximum-entropy solution of predicting flat policies.
 
 
 ## PyTorch implementation
 
 Policy gradient estimation is quite simple to implement, although it is a bit unusual. Instead of computing a scalar loss then calling `backward()` we will compute a vector of gradients ourselves and start automatic differentiation from there.
 
-_Note that this is a slightly odd example, since we're applying a bandit algorithm to a supervised learning problem - if we were solving a true bandit problem, the reward calculation be a more complex / completely separate system, for example a simulation or natural system._
+_Note that this is a slightly odd example, since we're applying a bandit algorithm to a supervised learning problem - if we were solving a true bandit problem, the reward calculation be a more complex / completely separate system, for example a simulation._
 
 ```python
 inputs, labels = ...
@@ -126,7 +126,7 @@ loss += entropy_weight * T.sum(log_probs * T.exp(log_probs)) / batch_size
 loss.backward()
 ```
 
-**1. Generate a log probability for each action and evaluate the baseline:** You can use one network to implement both the policy and baseline. The network produces `n_classes + 1` outputs. The policy looks quite like a classifier, producing a vector of `n_classes` with a log-softmax to give log-probabilities for each class. The baseline value function uses a sigmoid nonlinearity here because the reward is always between 0 and 1.
+**1. Generate a log probability for each action and evaluate the baseline:** You can use one model to implement both the policy and baseline. The model produces `n_classes + 1` outputs. The policy looks quite like a classifier, producing a vector of `n_classes` with a log-softmax to give log-probabilities for each class. The baseline value function uses a sigmoid nonlinearity here because the reward is always between 0 and 1.
 
 **2. Sample an action and obtain a reward:** For each input in our batch, choose an action by taking a single multinomial sample from our policy distribution. Then, obtain a reward for the chosen action, in this case by comparing with the known target label. This is all wrapped in a `T.no_grad()`, demonstrating that there is no gradient flow here.
 
@@ -134,14 +134,14 @@ loss.backward()
 
 PyTorch makes it very easy to backpropagate from a custom output gradient: just pass the gradient tensor into `backward()`. In this case, we also specify `retain_graph=True` because step 4 will call `backward()` again.
 
-**4. Train the baseline and add policy regularisation:** The baseline function can be trained at the same time as the policy. The baseline function is trained using regular supervised learning. In this case since the reward is binary, binary cross entropy loss the obvious choice. At the same time, add policy regularisation by subtracting the policy's entropy.
+**4. Train the baseline and add policy regularisation:** The baseline function can be trained at the same time as the policy. The baseline function is trained using regular supervised learning. In this case since the reward is binary, binary cross entropy loss the obvious choice. We also add policy regularisation here by subtracting the policy's entropy.
 
 
 ## What does it do?
 
 Let's walk through policy gradients with an example. To simplify things we'll just look at the policy gradients themselves, omitting baseline value and entropy regulariser gradients.
 
-When we run our network, we get the baseline value `0.175` and these policy probabilities:
+When we run our model, we get the baseline value `0.175` and these policy probabilities:
 
 ![bar chart of policy probabilities with spikes (in descending probability order) over "horse", "dog", "airplane" and "cat"](img/policy.png)
 
@@ -151,7 +151,7 @@ From here, we'll consider two different cases, one in which the sampled action i
 
 ![two bar charts, one for the action "horse" with a small baseline and large reward, one for the action "dog" with small baseline and zero reward](img/reward.png)
 
-When "horse" is chosen, the reward is 1, which is much higher than the baseline, but when "dog" is chosen the reward is 0, which is slightly lower than the baseline. Intuitively, after predicting "horse" the network sees that it gets a better-than-expected reward, whereas after predicting "dog" it sees that it gets a worse-than-expected reward.
+When "horse" is chosen, the reward is 1, which is much higher than the baseline, but when "dog" is chosen the reward is 0, which is slightly lower than the baseline. Intuitively, after predicting "horse" the model sees that it gets a better-than-expected reward, whereas after predicting "dog" it sees that it gets a worse-than-expected reward.
 
 ### The backward pass
 
@@ -169,14 +169,14 @@ One thing that isn't immediately obvious from the above example is the importanc
 
 Imagine a case where the input doesn't matter, there are only two possible actions "A" or "B", and we are not using a baseline function. If the policy selects "A" it gets a reward of 50, but if it selects "B" it gets a reward of 100. The optimal policy is obvious - always choose "B", i.e. `A:0%, B:100%`.
 
-Imagine our network starts balanced, with `A:50%, B:50%`. What happens when we sample the action "A" vs "B"?
+Imagine our model starts balanced, with `A:50%, B:50%`. What happens when we sample the action "A" vs "B"?
 
  - When we sample "A", we get a gradient of -50, so we increase the probability of selecting "A" and decrease the probability of selecting "B".
  - When we sample "B", we get a gradient of -100, so we increase the probability of selecting "B" and decrease the probability of selecting "A".
 
-Interestingly, our network sometimes moves toward the optimal policy (after sampling "B") but sometimes moves away from the optimal policy (after sampling "A"). So we might wonder how policy gradient would find the optimal policy here?
+Interestingly, our model sometimes moves toward the optimal policy (after sampling "B") but sometimes moves away from the optimal policy (after sampling "A"). So we might wonder how policy gradient would find the optimal policy here?
 
-The answer is in the numbers: after sampling "A" the network takes a size=50 step toward predicting "A" more than "B". But after sampling "B" the network takes a size=100 step toward predicting "B" more than "A". It is a case of [one step back and two steps forward](https://open.spotify.com/track/0hDIl9KjY96g5tNNVxvg3a?si=zVkoaipQR9SJP9Ur9KqnZA). So on average, our network moves toward the optimal policy of always predicting "B".
+The answer is in the numbers: after sampling "A" the model takes a size=50 step toward predicting "A" more than "B". But after sampling "B" the model takes a size=100 step toward predicting "B" more than "A". It is a case of [one step back and two steps forward](https://open.spotify.com/track/0hDIl9KjY96g5tNNVxvg3a?si=zVkoaipQR9SJP9Ur9KqnZA). So on average, our model moves toward the optimal policy of always predicting "B".
 
 
 ## Wrap up
@@ -211,11 +211,11 @@ We define the expected reward $G$:
 
 \begin{equation\*}
 G = E_{\tilde{a} \sim \pi(a|x)} R(\tilde{a})
-p\end{equation\*}
+\end{equation\*}
 
-Where $\pi(a|x)$ is a differentiable model, parameterised by $\theta$. $R(a)$ is a reward function which may be evaluated but with no gradient information.
+Where $\pi(a|x)$ is a differentiable function, parameterised by $\theta$. $R(a)$ is a reward function which may be evaluated but with no gradient information.
 
-We would like to find the gradient of the expected reward w.r.t. model parameters $\partial G / \partial \theta$.
+We would like to find the gradient of the expected reward w.r.t. parameters $\partial G / \partial \theta$.
 
 First, we expand the equation for an expectation, and take the gradient:
 

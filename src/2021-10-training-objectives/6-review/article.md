@@ -23,11 +23,11 @@ It follows our running example of training a classifier for small image patches 
 
 Please do have a play with it. Or even better, just throw this example away and have a go at implementing the objectives yourself, maybe for another dataset or domain. But if you like to learn by tweaking, here are a few things you could try:
 
- - _Explore the hyperparameters._ What do `alpha`, `n_samples`, `epsilon` and `entropy_weight` do?
- - Try to _train a deeper network._ E.g. ResNet18 from `torchvision`. Which objectives are harder to train?
- - Try _changing the step size or optimiser._ Are there better settings for certain objectives?
- - Try _removing the baseline from policy gradient._ How does it perform?
- - Can you _make the value function more consistent?_ I.e. so that the expected reward sums to one across actions. How does performance change?
+ - Explore the hyperparameters. What do `alpha`, `n_samples`, `epsilon` and `entropy_weight` do?
+ - Try to train a deeper network. E.g. ResNet18 from `torchvision`. Which objectives are harder to train?
+ - Try changing the step size or optimiser. Are there better settings for certain objectives?
+ - Try removing the baseline from policy gradient. How does it perform?
+ - Can you make the value function more consistent? I.e. so that the expected reward sums to one across actions. How does performance change?
 
 <ul class="nav nav-pills">
   <li class="nav-item">
