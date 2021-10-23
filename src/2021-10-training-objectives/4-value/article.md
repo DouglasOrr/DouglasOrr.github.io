@@ -5,7 +5,7 @@ keywords: deep-learning,training,tutorial
 
 Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.
 
-This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.
+This is part of our series on [training objectives](../1-xent/article.md), where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.
 
 
 ## The new game
@@ -183,7 +183,7 @@ Value function estimation is a simple and useful technique to help solve context
     <a class="nav-link" href="../5-policy/article.html">Next - policy gradient estimation</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

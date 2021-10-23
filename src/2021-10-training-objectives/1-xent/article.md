@@ -1,11 +1,23 @@
 title: Softmax Cross Entropy Loss
 keywords: deep-learning,training,tutorial
 
-# Softmax Cross Entropy Loss
+# How to train your classifier
+
+This is a short series of "deep dives" into training objectives. In each post we'll try to motivate and explain a training objective, finishing by looking at the critical gradient information they provide back to the model. I've enjoyed preparing these & hope you find something useful here too.
+
+ 1. **Softmax Cross Entropy Loss**
+ 2. [Teacher-Student Training](../2-teacher/article.md)
+ 3. [Sampled Softmax Loss](../3-sampled/article.md)
+ 4. [Value Function Estimation](../4-value/article.md)
+ 5. [Policy Gradient Estimation](../5-policy/article.md)
+ 6. [Review - try them for yourself](../6-review/article.md)
+
+
+## Softmax cross entropy loss
 
 If you’ve tried deep learning for yourself, I’d guess you’ve trained a model using softmax cross entropy loss. It’s so overwhelmingly popular I thought I might write a series of blog posts to remind myself there are other options out there.
 
-But we'll start with softmax cross entropy. If you already know why it is defined as it is and what the forward and backward passes look like, feel free to skip to [teacher-student training](../2-teacher/article.md). But if like me you're due a refresher, read on.
+But we'll start with softmax cross entropy. If you already know why it is defined as it is and what the forward and backward passes look like, feel free to skip on through the list above. But if like me you're due a refresher, read on.
 
 In this article, we'll think through the core idea of softmax cross entropy loss, see how to add it to a PyTorch model, and finally look at what happens under the hood when we use it. I'll assume you already know some core deep learning concepts - e.g. what a forward pass, backward pass and loss function is.
 

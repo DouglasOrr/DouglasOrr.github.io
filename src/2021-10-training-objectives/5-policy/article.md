@@ -5,7 +5,7 @@ keywords: deep-learning,training,tutorial
 
 Policy gradient estimation is a popular technique for reinforcement learning (RL). It can optimise models to take good actions, even when the feedback provided for these actions is non-differentiable and includes randomness.
 
-This is part of our series on [training objectives](/index.html#classifier-training-objectives), where we're looking at various objectives to use to train a deep learning classifier. In the last segment, we saw [value function estimation](../4-value/article.md), which can address similar problems to policy gradient estimation.
+This is part of our series on [training objectives](../1-xent/article.md), where we're looking at various objectives to use to train a deep learning classifier. In the last segment, we saw [value function estimation](../4-value/article.md), which can address similar problems to policy gradient estimation.
 
 Of all the algorithms we've visited in this series, I find policy gradients the most magical. When first introduced to it, I was surprised it can work at all. And thinking through it has helped me understand loss function design a little deeper. I hope it can pique your curiosity too!
 
@@ -192,7 +192,7 @@ Policy gradient estimation is a powerful although slightly fiddly technique. Alt
     <a class="nav-link" href="../6-review/article.html">Next - review</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

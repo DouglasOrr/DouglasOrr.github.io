@@ -3,7 +3,7 @@ keywords: deep-learning,training,tutorial
 
 # How to train your classifier - review
 
-This is the final part in our series on [training objectives](/index.html#classifier-training-objectives), exploring objectives you could use to train a deep learning classifier.
+This is the final part in our series on [training objectives](../1-xent/article.md), exploring objectives you could use to train a deep learning classifier.
 
 We've met softmax cross entropy, teacher-student training, sampled softmax, value function estimation and policy gradients. We reviewed the core ideas and walked through a typical forward and backward pass. All that's remains is to provide some demo code, so you can play around with these at your leisure.
 
@@ -31,7 +31,7 @@ Please do have a play with it. Or even better, just throw this example away and 
 
 <ul class="nav nav-pills">
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

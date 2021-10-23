@@ -5,7 +5,7 @@ keywords: deep-learning,training,tutorial
 
 Sampled Softmax is a drop-in replacement for softmax cross entropy which improves scalability e.g. when there are millions of classes. It is very similar to Noise Contrastive Estimation (NCE) and Negative Sampling, both of which are popular in natural language processing, where the vocabulary size can be very large.
 
-In this article, we'll think through the core idea of the sampled softmax loss function, see how to implement it in PyTorch and finally look at what happens when we use this loss. This is part of our series on [training objectives](/index.html#classifier-training-objectives), and if you're not familiar with softmax cross entropy, [our introduction](../1-xent/article.html) to that would be a useful pre-read.
+In this article, we'll think through the core idea of the sampled softmax loss function, see how to implement it in PyTorch and finally look at what happens when we use this loss. This is part of our series on [training objectives](../1-xent/article.md), and if you're not familiar with softmax cross entropy, [our introduction](../1-xent/article.html#softmax-cross-entropy-loss) to that would be a useful pre-read.
 
 
 ## Core idea
@@ -149,7 +149,7 @@ I'd probably consider using sampled softmax if I have over 100,000 classes, or i
     <a class="nav-link" href="../4-value/article.html">Next - value function estimation</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

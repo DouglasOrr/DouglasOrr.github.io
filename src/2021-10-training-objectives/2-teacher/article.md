@@ -5,7 +5,7 @@ keywords: deep-learning,training,tutorial
 
 Teacher-student training is a technique for speeding up training and improving convergence of a neural network, given a pretrained "teacher" network. It's very popular and effective, commonly used to train smaller, cheaper networks from larger, more expensive ones.
 
-In this article, we'll think through the core idea of teacher-student training, see how to implement it in PyTorch, and finally look at what actually happens when we use this loss. This is part of our series on [training objectives](/index.html#classifier-training-objectives), and if you're not familiar with softmax cross entropy, [our introduction](../1-xent/article.html) to that would be a useful pre-read.
+In this article, we'll think through the core idea of teacher-student training, see how to implement it in PyTorch, and finally look at what actually happens when we use this loss. This is part of our series on [training objectives](../1-xent/article.md), and if you're not familiar with softmax cross entropy, [our introduction](../1-xent/article.html#softmax-cross-entropy-loss) to that would be a useful pre-read.
 
 
 ## Core idea
@@ -134,7 +134,7 @@ The most common scenario for teacher-student is **optimising for inference/predi
     <a class="nav-link" href="../3-sampled/article.html">Next - sampled softmax</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 
