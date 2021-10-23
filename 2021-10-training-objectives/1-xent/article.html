@@ -20,9 +20,19 @@
   <div class="container dd-root">
     <div class="row">
       <div class="col">
-        <h1 id="softmax-cross-entropy-loss">Softmax Cross Entropy Loss</h1>
+        <h1 id="how-to-train-your-classifier">How to train your classifier</h1>
+<p>This is a short series of "deep dives" into training objectives. In each post we'll try to motivate and explain a training objective, finishing by looking at the critical gradient information they provide back to the model. I've enjoyed preparing these &amp; hope you find something useful here too.</p>
+<ol>
+<li><strong>Softmax Cross Entropy Loss</strong></li>
+<li><a href="../2-teacher/article.html">Teacher-Student Training</a></li>
+<li><a href="../3-sampled/article.html">Sampled Softmax Loss</a></li>
+<li><a href="../4-value/article.html">Value Function Estimation</a></li>
+<li><a href="../5-policy/article.html">Policy Gradient Estimation</a></li>
+<li><a href="../6-review/article.html">Review - try them for yourself</a></li>
+</ol>
+<h2 id="softmax-cross-entropy-loss">Softmax cross entropy loss</h2>
 <p>If you’ve tried deep learning for yourself, I’d guess you’ve trained a model using softmax cross entropy loss. It’s so overwhelmingly popular I thought I might write a series of blog posts to remind myself there are other options out there.</p>
-<p>But we'll start with softmax cross entropy. If you already know why it is defined as it is and what the forward and backward passes look like, feel free to skip to <a href="../2-teacher/article.html">teacher-student training</a>. But if like me you're due a refresher, read on.</p>
+<p>But we'll start with softmax cross entropy. If you already know why it is defined as it is and what the forward and backward passes look like, feel free to skip on through the list above. But if like me you're due a refresher, read on.</p>
 <p>In this article, we'll think through the core idea of softmax cross entropy loss, see how to add it to a PyTorch model, and finally look at what happens under the hood when we use it. I'll assume you already know some core deep learning concepts - e.g. what a forward pass, backward pass and loss function is.</p>
 <h2 id="core-idea">Core idea</h2>
 <p>Imagine we’re using deep learning to find a function to classify images "is it a plane? / bird? / horse? etc." Our plan is to choose a parameterised function with random initialisation and take steps to minimise a loss function by updating the parameters using gradient descent. So an immediate problem is how to choose this loss function.</p>

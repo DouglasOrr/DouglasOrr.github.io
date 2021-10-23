@@ -22,7 +22,7 @@
       <div class="col">
         <h1 id="sampled-softmax-loss">Sampled Softmax Loss</h1>
 <p>Sampled Softmax is a drop-in replacement for softmax cross entropy which improves scalability e.g. when there are millions of classes. It is very similar to Noise Contrastive Estimation (NCE) and Negative Sampling, both of which are popular in natural language processing, where the vocabulary size can be very large.</p>
-<p>In this article, we'll think through the core idea of the sampled softmax loss function, see how to implement it in PyTorch and finally look at what happens when we use this loss. This is part of our series on <a href="/index.html#classifier-training-objectives">training objectives</a>, and if you're not familiar with softmax cross entropy, <a href="../1-xent/article.html">our introduction</a> to that would be a useful pre-read.</p>
+<p>In this article, we'll think through the core idea of the sampled softmax loss function, see how to implement it in PyTorch and finally look at what happens when we use this loss. This is part of our series on <a href="../1-xent/article.html">training objectives</a>, and if you're not familiar with softmax cross entropy, <a href="../1-xent/article.html#softmax-cross-entropy-loss">our introduction</a> to that would be a useful pre-read.</p>
 <h2 id="core-idea">Core idea</h2>
 <p>When we looked at softmax cross entropy loss gradient updates, we saw both a narrow "spike" and a wider "forest". The spike is a strong negative gradient for the correct label e.g. "horse". The forest contains positive gradients for all other classes. We observed that the spike and the forest contain the same probability mass, but whereas the spike is concentrated on a single class, the forest is spread out over $N\!-\!1$ classes.</p>
 <p>It looked like this:</p>
@@ -125,7 +125,7 @@ loss.backward()</code></pre>
     <a class="nav-link" href="../4-value/article.html">Next - value function estimation</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

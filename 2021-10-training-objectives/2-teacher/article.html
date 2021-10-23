@@ -22,7 +22,7 @@
       <div class="col">
         <h1 id="teacher-student-training-aka-knowledge-distillation">Teacher-Student Training (aka Knowledge Distillation)</h1>
 <p>Teacher-student training is a technique for speeding up training and improving convergence of a neural network, given a pretrained "teacher" network. It's very popular and effective, commonly used to train smaller, cheaper networks from larger, more expensive ones.</p>
-<p>In this article, we'll think through the core idea of teacher-student training, see how to implement it in PyTorch, and finally look at what actually happens when we use this loss. This is part of our series on <a href="/index.html#classifier-training-objectives">training objectives</a>, and if you're not familiar with softmax cross entropy, <a href="../1-xent/article.html">our introduction</a> to that would be a useful pre-read.</p>
+<p>In this article, we'll think through the core idea of teacher-student training, see how to implement it in PyTorch, and finally look at what actually happens when we use this loss. This is part of our series on <a href="../1-xent/article.html">training objectives</a>, and if you're not familiar with softmax cross entropy, <a href="../1-xent/article.html#softmax-cross-entropy-loss">our introduction</a> to that would be a useful pre-read.</p>
 <h2 id="core-idea">Core idea</h2>
 <p>When we looked at the softmax cross entropy loss function with a one-hot target, we saw that the gradient looked "spiky". Each example in a batch contributes a large gradient spike to increase the score of the correct label, and a flatter gradient across all other labels. If we look at any individual example, it is trying to make the target probability 1 and everything else 0 - this would minimise the loss for that example.</p>
 <p>But there's a conflict here. We don't actually expect (or even want) such a spiky output from our model. Instead, we'd expect an output to hedge it's bets a bit. For example, given this image:</p>
@@ -101,7 +101,7 @@ loss.backward()</code></pre>
     <a class="nav-link" href="../3-sampled/article.html">Next - sampled softmax</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 

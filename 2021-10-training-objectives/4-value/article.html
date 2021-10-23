@@ -22,7 +22,7 @@
       <div class="col">
         <h1 id="value-function-estimation">Value Function Estimation</h1>
 <p>Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.</p>
-<p>This is part of our series on <a href="/index.html#classifier-training-objectives">training objectives</a>, where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.</p>
+<p>This is part of our series on <a href="../1-xent/article.html">training objectives</a>, where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.</p>
 <h2 id="the-new-game">The new game</h2>
 <p>Before we look at value function estimation, we need to understand that it isn't "playing the same game" as softmax cross entropy.</p>
 <p>The old game is <strong>supervised learning for classification</strong>. The goal is to predict the correct label "airplane" or "automobile" or "bird" for each image in a test. Your score is the percentage of images correctly labelled, given some unknown target labelling. To prepare for the test, you're given a large set of images, alongside their target labels, which you're free to use in any way you like.</p>
@@ -142,7 +142,7 @@ loss.backward()</code></pre>
     <a class="nav-link" href="../5-policy/article.html">Next - policy gradient estimation</a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" href="/index.html#classifier-training-objectives">Up - index</a>
+    <a class="nav-link" href="../1-xent/article.html">Up - index</a>
   </li>
 </ul>
 
