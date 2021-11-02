@@ -7,7 +7,7 @@ Autodiff is the heart of a deep learning framework[^heart]. But it’s very easy
 
 This post is a guided walk though the basic bits of a usable autodiff implementation. If you would rather just read the code, jump straight to our notebook on [GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb) or [Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb).
 
-_Tiny autodiff is no new idea - see also Andrej Kaparthy's [micrograd](https://github.com/karpathy/micrograd), amongst others._
+_Tiny autodiff is no new idea - see also Andrej Karpathy's [micrograd](https://github.com/karpathy/micrograd), amongst others._
 
 
 ## The Chain[^play]
