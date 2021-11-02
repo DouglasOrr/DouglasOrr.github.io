@@ -110,6 +110,7 @@ class RenderRule(Rule):
             "meta",
             "tables",
             "toc",
+            "footnotes",
         ]
     )
 
@@ -119,6 +120,7 @@ class RenderRule(Rule):
         self.template = template
 
     def _build(self):
+        self.MARKDOWN.reset()
         logging.info(f"render {self.source} => {self.target}")
         with open(self.template, encoding="utf-8") as template_f:
             template = template_f.read()

@@ -1,4 +1,4 @@
-personal_ws-1.1 en 69 
+personal_ws-1.1 en 77 
 pixelated
 stateful
 activations
@@ -17,16 +17,21 @@ subword
 jpg
 RNN
 interpretable
+autodiff
+Autodiff
 tokenisation
 scalability
 vanishingly
 KJV
 exponentiate
+MNIST
 OpenAI
 cdot
 composability
 nonlinearity
+perceptron
 wordpiece
+matmul
 backpropagation
 hyperparameters
 Autoregressive
@@ -48,11 +53,14 @@ argmax
 png
 html
 md
+numpy
 CIFAR
 FFN
 unnormalised
 runtime
 dataset
+ReLU
+recursing
 dataset's
 img
 nonlinearities

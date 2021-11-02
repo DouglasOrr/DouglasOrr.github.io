@@ -8,6 +8,8 @@ My grab bag of various diversions/essays about machine learning and software eng
 
 ## Index
 
+2021-11 - [Autodiff from scratch](2021-11-autodiff/article.md)
+
 2021-10 - [How to train your classifier - an introduction to deep learning objectives](2021-10-training-objectives/1-xent/article.md)
 
 2021-09 - [My phone case, the hidden state of an RNN](2021-09-phone-case/article.md)
