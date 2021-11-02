@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="author" content="Douglas Orr">
+  <meta name="keywords" content="deep-learning,autodiff,frameworks,numpy">
+  <link rel="stylesheet" href="/css/lib.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  <script type="text/javascript" src="/js/custom.js" defer></script>
+  <script type="text/javascript" src="/js/lib.js" defer></script>
+  <title>Autodiff from scratch</title>
+</head>
+
+<body>
+  <nav class="navbar navbar-dark bg-dark">
+    <a class="navbar-brand" href="/">Doug's Diversions</a>
+  </nav>
+  <div class="container dd-root">
+    <div class="row">
+      <div class="col">
+        <h1 id="autodiff-from-scratch">Autodiff from scratch</h1>
+<p>Autodiff is the heart of a deep learning framework<sup id="fnref:heart"><a class="footnote-ref" href="#fn:heart">1</a></sup>. But it’s very easy to take it for granted and never peek under the hood to see how the engine works. So in this post, we'll make sure we understand the basics by implementing autodiff in a few lines of numpy.</p>
+<p>This post is a guided walk though the basic bits of a usable autodiff implementation. If you would rather just read the code, jump straight to our notebook on <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">GitHub</a> or <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">Colab</a>.</p>
+<p><em>Tiny autodiff is no new idea - see also Andrej Kaparthy's <a href="https://github.com/karpathy/micrograd">micrograd</a>, amongst others.</em></p>
+<h2 id="the-chain2">The Chain<sup id="fnref:play"><a class="footnote-ref" href="#fn:play">2</a></sup></h2>
+<p>Autodiff is the chain rule automated. The chain rule says that for $y = f(g(x))$:
+$$
+\frac{\partial y}{\partial x} = \left. \frac{\partial f(z)}{\partial z} \right|_{z=g(x)} \frac{\partial g(x)}{\partial x}
+$$
+This is great, because if we define a complicated function as the composition of simpler functions, we can obtain gradients using the chain rule and simple local equations for derivatives<sup id="fnref:reverse"><a class="footnote-ref" href="#fn:reverse">3</a></sup>.</p>
+<p>For example, let’s differentiate the function $y = e^{-2 \cdot \mathrm{max}(x, 0)}$. We'll split into three pieces for the forward pass, then apply the chain rule to those pieces in reverse order for the backward pass. Note that $\Rightarrow$ is where we apply the chain rule:</p>
+<p>\begin{align*}
+y &amp;= e^{-2 \cdot \mathrm{max}(x, 0)} \\
+&amp;= f_3(f_2(f_1(x))) \\
+\text{forward:}&amp; \\
+f_1(z_1) &amp;= \mathrm{max}(z_1, 0) \\
+f_2(z_2) &amp;= -2 \cdot z_2 \\
+f_3(z_3) &amp;= e^{z_3} \\
+\text{backward:}&amp; \\
+\frac{\partial f_3(z_3)}{\partial z_3} &amp;= e^{z_3} = y \\
+&amp;\Rightarrow \frac{\partial y}{\partial z_3} = y \\
+\frac{\partial f_2(z_2)}{\partial z_2} &amp;= -2 \\
+&amp;\Rightarrow \frac{\partial y}{\partial z_2} = -2 \cdot y \\
+\frac{\partial f_1(z_1)}{\partial z_1} &amp;= \mathrm{H}(z_1) = \mathrm{H}(x) \\
+&amp;\Rightarrow \frac{\partial y}{\partial x} = -2 \cdot y \cdot \mathrm{H}(x) \;, \\
+\end{align*}</p>
+<p>where $\mathrm{H}(x)$ is the Heaviside step function, stepping from $0$ to $1$ at $x=0$.</p>
+<p>The things notice about this process are that it's:</p>
+<ul>
+<li>Very simple - no tricky derivatives.</li>
+<li>Tedious - good work for a computer.</li>
+</ul>
+<p>Autodiff therefore seeks to automate this. It provides the ML developer with means to express function composition and to write down the simple local derivatives, then automates repeated application of the chain rule to give gradients through the composite function.</p>
+<h2 id="started-out-with-nothin">Started Out With Nothin’</h2>
+<p>We’re all set to build our numpy autodiff library. We’ll take the same approach as PyTorch, and run the forward pass eagerly. This means when you write $y = 2 x$, we compute $y$ straight away. At the same time we need to store some extra data, as $y$ needs to know how to tell $x$ its gradient in the backward pass. We’ll call this bundle a <code>Tensor</code>:</p>
+<pre><code class="language-python">Array = np.ndarray
+BackpropFn = Callable[[Array], None]
+TensorLike = Union[&quot;Tensor&quot;, Array, float]
+
+@dataclass
+class Tensor:
+    value: Array
+    grad: Optional[Array]
+    backpropagate: Optional[BackpropFn]
+    parents: Tuple[&quot;Tensor&quot;, ...]
+
+    @property
+    def requires_grad(self) -&gt; bool:
+        return self.grad is not None</code></pre>
+
+<p>Here <code>grad</code> is the gradient of some global scalar (typically “loss”) with respect to <code>value</code>. It’s <code>Optional</code> because some tensors won’t need gradients. Next, <code>backpropagate</code> is a function that fills in gradients for any inputs that produced this tensor and is <code>Optional</code> because some tensors don’t have inputs e.g. the constant $2$. Finally, <code>parents</code> is a list of inputs (the same inputs that are updated by <code>backpropagate</code>), which tells our autodiff algorithm which tensors to visit after computing <code>grad</code>.</p>
+<p>Next, we need to be able to create tensors. These can be “initial tensors” created from arrays, either of input data or trainable parameters. Or they can be “result tensors” from operations run on other tensors, supporting backpropagation. We choose a factory function for creating initial tensors, and a function decorator to automate creation of result tensors:</p>
+<pre><code class="language-python">class Tensor:
+    ...
+    @classmethod
+    def wrap(cls, value: TensorLike, requires_grad: bool) -&gt; &quot;Tensor&quot;:
+        if isinstance(value, cls):
+            return value
+        value = np.array(value)
+        return cls(
+            value=value,
+            grad=np.zeros_like(value) if requires_grad else None,
+            backpropagate=None,
+            parents=(),
+        )
+
+def operation(fn: Callable[..., Tuple[Array, BackpropFn]]) -&gt; Callable[..., Tensor]:
+    @functools.wraps(fn)
+    def wrapper(*args: TensorLike) -&gt; Tensor:
+        inputs = tuple(Tensor.wrap(arg, requires_grad=False) for arg in args)
+        value, backpropagate = fn(*inputs)
+        requires_grad = any(input.requires_grad for input in inputs)
+        return Tensor(
+            value=value,
+            grad=np.zeros_like(value) if requires_grad else None,
+            backpropagate=backpropagate if requires_grad else None,
+            parents=inputs,
+        )
+
+    return wrapper</code></pre>
+
+<p>The difference between the two types of tensor is evident here. An initial tensor created by <code>wrap</code> doesn’t have any parents or perform backpropagation. It can still receive a gradient, needed for trainable parameters. A result tensor created by an <code>operation</code> supports backpropagation to its inputs, as defined by the specific operation.</p>
+<p>Note that <code>Tensor.wrap()</code> of the inputs to an operation is just for convenience, it means that you will be able to write <code>Op.add(x, 2)</code> rather than the cumbersome <code>Op.add(x, Tensor.wrap(2, requires_grad=False))</code>.</p>
+<h2 id="get-back">Get Back</h2>
+<p>So far we’ve built a way to track dependencies for tensors and to define functions that perform local gradient computations. Now for the fun bit - recursing on the chain rule to backpropagate through the whole graph of operations. There isn’t much to it:</p>
+<pre><code class="language-python">class Tensor:
+    ...
+    def _dependency_order(self, visited: Set[int]) -&gt; Iterator[&quot;Tensor&quot;]:
+        if id(self) not in visited:
+            for parent in self.parents:
+                yield from parent._dependency_order(visited)
+            yield self
+            visited.add(id(self))
+
+    def backward(self) -&gt; None:
+        self.grad[...] = 1
+        for tensor in reversed(list(self._dependency_order(set()))):
+            if tensor.backpropagate is not None:
+                tensor.backpropagate(tensor.grad)</code></pre>
+
+<p>The key thing here is to walk through the graph of operations in reverse dependency order. If the forward graph looks like <code>A -&gt; B -&gt; C</code>, the local backpropagation operations must run in order <code>[C, B, A]</code>. It’s easiest to define a forward dependency order traversal (<code>_dependency_order</code>) then reverse it. Then, to run the backward pass, we set our gradient to <code>1</code>, as $\frac{\partial L}{\partial L} = 1$ and run the local backpropagation operations in order. Each <code>BackpropFn</code> will accumulate gradient information into its inputs before <code>backward()</code> visits them to continue backpropagation.</p>
+<p>That’s actually it for the core library, but things won’t really make sense until we look at a few operations.</p>
+<h2 id="put-the-message-in-the-box">Put The Message In The Box</h2>
+<p>We won’t cover all the operations we need to train in this blog, as they all follow the same pattern. Here's the ReLU activation:</p>
+<pre><code class="language-python">@operation
+def relu(x: Tensor) -&gt; Tuple[Array, BackpropFn]:
+    def backpropagate(grad: Array) -&gt; None:
+        x.grad += grad * (x.value &gt; 0)
+
+    return np.maximum(x.value, 0), backpropagate</code></pre>
+
+<p>This is a typical example of using the <code>@operation</code> decorator to create a result tensor with everything needed for backpropagation. The forward pass implementation is on the last line <code>np.maximum(x.value, 0)</code>. But we also need to return a function that accumulates gradient through the ReLU to the input. It’s convenient to define these two together, because the gradient computation might need to capture information from the forward pass. In this case our function captures the input <code>x</code> in a closure.</p>
+<p>Another thing to notice is that instead of setting <code>x.grad[...] = &lt;grad&gt;</code>, we accumulate <code>x.grad += &lt;grad&gt;</code>. This is because we have implicit copying of tensors in the forward pass. If <code>x</code> was used for a <code>relu</code> and some other operation in the forward pass, it should sum the gradients from the two branches in the backward pass.</p>
+<p>Next, matrix multiplication:</p>
+<pre><code class="language-python">@operation
+def matmul(x: Tensor, y: Tensor) -&gt; Tuple[Array, BackpropFn]:
+    def backpropagate(grad: Array) -&gt; None:
+        if x.requires_grad:
+            x.grad += grad @ y.value.T
+        if y.requires_grad:
+            y.grad += x.value.T @ grad
+
+    return x.value @ y.value, backpropagate</code></pre>
+
+<p><code>matmul</code> needs to capture both inputs for the backward pass. To be honest, I find it hard to remember which way all the transposes and matrix multiplications go, but thinking of the shapes <code>x: (A, B), y: (B, C), grad: (A, C)</code>, there aren’t really any other ways to write it that’d make sense.</p>
+<p>Here the backward pass is made more efficient by skipping unnecessary gradients based on <code>Tensor.requires_grad</code>. In this case it’s just an optimisation, but for some other operations e.g. <code>power</code>, you might otherwise generate numerical errors for branches that don't require gradients at all.</p>
+<h2 id="suddenly-i-see">Suddenly I See</h2>
+<p>I can claim to have autodiff until the cows come home, but you shouldn’t believe me unless it’s usable. So here’s a small ReLU multi-layer perceptron for MNIST using our autodiff:</p>
+<pre><code class="language-python">class Model:
+    def __init__(self):
+        random = np.random.RandomState(3721)
+        self.parameters = []
+        self.lr = 0.1
+        self.W0 = self.parameter(random.randn(28 * 28, 256) / np.sqrt(28 * 28))
+        self.b0 = self.parameter(np.zeros(256))
+        self.W1 = self.parameter(random.randn(256, 10) / np.sqrt(256))
+        self.b1 = self.parameter(np.zeros(10))
+
+    def parameter(self, value: Array) -&gt; Tensor:
+        tensor = Tensor.wrap(value.astype(np.float32), requires_grad=True)
+        self.parameters.append(tensor)
+        return tensor
+
+    def step(self, x: Array, y: Array) -&gt; float:
+        for parameter in self.parameters:
+            parameter.grad[...] = 0
+        h = Op.matmul(x, self.W0)
+        h = Op.add(h, Op.broadcast_to(self.b0, h.value.shape))
+        h = Op.relu(h)
+        h = Op.matmul(h, self.W1)
+        h = Op.add(h, Op.broadcast_to(self.b1, h.value.shape))
+        loss = Op.softmax_cross_entropy(h, y)
+        loss.backward()
+        for parameter in self.parameters:
+            parameter.value -= self.lr * parameter.grad
+        return float(loss.value)</code></pre>
+
+<p>If you’ve used PyTorch, it should look familiar. You have to reset parameter gradients to zero before running the forward pass and you call <code>loss.backward()</code> before an optimiser update using <code>parameter.grad</code>.</p>
+<p>There are a few things that feel painful here - you can’t write <code>x @ self.W0</code> because we haven’t defined any operators on <code>Tensor</code>, and there’s no implicit broadcasting so adding bias looks particularly messy. But these would be easy to remedy with a few tweaks to the implementation.</p>
+<h2 id="all-i-got">All I Got</h2>
+<p>That’s it for now. But if you’ve read this far, I’d recommend looking at the notebook with complete code for training MNIST, on <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">GitHub</a> or <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">Colab</a>.</p>
+<p>A few personal takeaways from this enjoyable diversion:</p>
+<ul>
+<li>The essence of autodiff is very simple and small - no magic here.</li>
+<li>Skipping gradient computation (<code>requires_grad</code>) can be more than just an optimisation - sometimes you have branches that are non-differentiable.</li>
+<li>Using a tensor twice in the forward pass means an addition in the backward pass (and vice versa).</li>
+<li>Broadcasting a tensor in the forward pass is a reduce-sum in the backward pass (and vice versa).</li>
+<li>The devil is in the details - our implementation is horribly memory-inefficient and missing both operator overloads and auto-broadcasting is painful.</li>
+</ul>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:heart">
+<p>Maybe deep learning frameworks have two hearts, because I could equally say &quot;accelerator support is the heart of a deep learning framework&quot;.&#160;<a class="footnote-backref" href="#fnref:heart" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+<li id="fn:play">
+<p><a href="https://open.spotify.com/playlist/54Lj38WL2w3NnZUQwuzy7O?si=97428695b5304d35">Listen along</a> to our silly puns.&#160;<a class="footnote-backref" href="#fnref:play" title="Jump back to footnote 2 in the text">&#8617;</a></p>
+</li>
+<li id="fn:reverse">
+<p>Here we're just going to think about reverse mode automatic differentiation. There are <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">other sorts</a>.&#160;<a class="footnote-backref" href="#fnref:reverse" title="Jump back to footnote 3 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+      </div>
+    </div>
+    <div class="row dd-footer">
+      <div class="col">
+        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
+          those of any employer or other organization, past or present.</p>
+        <p>Please let me know of errors or missing references by <a
+            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
