@@ -157,7 +157,7 @@ I'd probably consider using sampled softmax if I have over 100,000 classes, or i
 ## References
 
  - Comparison: [Candidate Sampling Algorithms](https://www.tensorflow.org/extras/candidate_sampling.pdf), _(TensorFlow authors)._
- - NCE notes: [Notes on Noise Contrastive Estimation and Negative Sampling](https://arxiv.org/pdf/1410.8251.pdf), _Dyer C._
+ - NCE notes: [Notes on Noise Contrastive Estimation and Negative Sampling](https://arxiv.org/abs/1410.8251), _Dyer C._
  - Fundamentals: [Adaptive Importance Sampling to Accelerate Training of a Neural Probabilistic Language Model](https://wiki.inf.ed.ac.uk/twiki/pub/CSTR/ListenSemester2_2009_10/4443871.pdf), _Bengio Y, Senécal JS._
  - NCE: [Noise-contrastive estimation: A new estimation principle for unnormalised statistical models](http://proceedings.mlr.press/v9/gutmann10a/gutmann10a.pdf), _Gutmann M, Hyvärinen A._
  - Sharing noise: [Simple, fast noise-contrastive estimation for large RNN vocabularies](https://openreview.net/forum?id=r1ZY2X-ubH), _Zoph B, Vaswani A, May J, Knight K._
