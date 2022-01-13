@@ -1,5 +1,5 @@
 /**
- * Demo code for the echo effect used in FAD (game jam game).
+ * Demo code for the echo effect used in FAD (Game Jam game).
  */
 
 ///////////////////////////////////////////////////////////////////////////////
