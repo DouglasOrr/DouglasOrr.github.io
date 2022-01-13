@@ -1,0 +1,91 @@
+/* General */
+.demo-box {
+    display: inline-block;
+    padding: 1em;
+    border-radius: .3em;
+    margin: 0em 1em 2em 1em;
+    background-color: #444;
+    color: white;
+    font-family: sans-serif;
+    font-weight: bold;
+}
+.demo-box > :not(footer) {
+    display: inline-block;
+    vertical-align: top;
+}
+.demo-box > footer {
+    margin-top: 1em;
+    margin-bottom: -0.4em;
+    font-size: small;
+}
+.demo-box hr {
+    border-top: 1px solid #888;
+}
+.demo-reset {
+    text-decoration: underline;
+    cursor: pointer;
+}
+.demo-button {
+    background-color: #888;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+}
+.demo-button:hover {
+    background-color: #aaa;
+}
+.demo-play {
+    display: block !important;
+    width: 6em;
+    height: 3em;
+    border: 4px solid black;
+}
+.demo-game-canvas {
+    margin-bottom: 1em;
+}
+
+/* General - controls */
+.demo-game-controls {
+    position: relative;
+    width: 12em;
+    height: 7.5em;
+    margin: 1em 1em 1em 1em;
+}
+.demo-game-controls span {
+    font-size: x-large;
+}
+.demo-game-controls > .demo-button {
+    position: absolute;
+    display: block;
+    width: 4em;
+    height: 2.5em;
+    line-height: 2em;
+    border: .2em solid #444;
+}
+.demo-game-control-up {
+    left: 4em;
+    top: 0em;
+}
+.demo-game-control-left {
+    left: 0;
+    top: 2.5em;
+}
+.demo-game-control-down {
+    left: 4em;
+    top: 2.5em;
+}
+.demo-game-control-right {
+    left: 8em;
+    top: 2.5em;
+}
+.demo-game-control-ping {
+    left: 0em;
+    top: 5em;
+    width: 12em !important;
+}
+
+/* Custom */
+#demo-wave-canvas {
+    margin: 0em 1em 1em 1em;
+}
