@@ -8,6 +8,8 @@ My grab bag of various diversions/essays about machine learning and software eng
 
 ## Index
 
+2022-01 - [Rasterized ray tracing of sound in Javascript](2021-12-echolocation/article.md)
+
 2021-11 - [Autodiff from scratch](2021-11-autodiff/article.md)
 
 2021-10 - [How to train your classifier - an introduction to deep learning objectives](2021-10-training-objectives/1-xent/article.md)

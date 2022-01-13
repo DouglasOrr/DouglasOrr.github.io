@@ -1,6 +1,7 @@
-personal_ws-1.1 en 77 
+personal_ws-1.1 en 88 
 pixelated
 stateful
+px
 activations
 stdout
 eqref
@@ -14,17 +15,17 @@ contrastive
 RNNs
 UI
 subword
+rasterisation
 jpg
 RNN
-interpretable
 autodiff
-Autodiff
+interpretable
 tokenisation
 scalability
 vanishingly
 KJV
-exponentiate
 MNIST
+exponentiate
 OpenAI
 cdot
 composability
@@ -44,6 +45,9 @@ Avro
 pretrained
 NCE
 modeling
+transmissive
+worklet
+Worklet
 composable
 logits
 softmax
@@ -55,12 +59,16 @@ html
 md
 numpy
 CIFAR
+quantised
 FFN
 unnormalised
+subgraphs
 runtime
 dataset
 ReLU
+worklets
 recursing
+playability
 dataset's
 img
 nonlinearities
@@ -68,11 +76,14 @@ Colab
 regularisers
 pre
 svg
+rasterised
+Rasterised
 frac
 embeddings
 airplane
 mathrm
 regulariser
 backpropagate
+Bresenham's
 RL
 eqn
