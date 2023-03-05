@@ -74,7 +74,6 @@ logprobs = T.nn.functional.log_softmax(outputs)
 loss = T.nn.functional.kl_div(logprobs, target, reduction=&#x27;batchmean&#x27;)
 print(float(loss))
 loss.backward()</code></pre>
-
 <p>It's best not to keep training the teacher by accident - in PyTorch this means wrapping the teacher's prediction in <code>T.no_grad()</code>. Notice we're using KL divergence as a loss function - the PyTorch API encourages you to do this, but it will produce the same gradients as cross entropy.</p>
 <p><em>Note: an alternative (equivalent) implementation would be to use <code>T.nn.functional.kl_div</code> for <code>soft_target</code>, <code>T.nn.functional.cross_entropy</code> for <code>hard_target</code>, and mix the losses rather than the distributions.</em></p>
 <h2 id="what-does-it-do">What does it do?</h2>

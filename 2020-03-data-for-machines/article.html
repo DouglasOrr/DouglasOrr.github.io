@@ -38,10 +38,8 @@
 <p>As I program, I have two audiences - <em>humans</em> (myself and others) reviewing the code, and <em>machines</em> compiling/interpreting/linting/documenting the code. All programs must be written for machines to read (otherwise they're not programs in formal language, they're essays in natural language). And almost all programs should be written for humans to read.</p>
 <p>Writing code for a machine means I can't write</p>
 <pre><code class="language-cpp">int x = if (small) { 123 } else { 456 };</code></pre>
-
 <p>...in C++, since <code>if</code> is a statement not an expression. And writing code for humans means I shouldn't write</p>
 <pre><code class="language-cpp">auto y = (a?~b:-b)*(l+1/z(2))&gt;&gt;qq/q;</code></pre>
-
 <p>...because that's just harsh!</p>
 <p>So I must write for both human and machine. But I'd argue that <em>most</em> of my effort should be spent writing for my human audience. This means I think more about the human reading the program than the machine that compiles or runs it.</p>
 <p>For example, here is a Python program, designed with the Python interpreter in mind <em>(unhappy challenge: what does it do?)</em></p>
@@ -65,7 +63,6 @@ def get_results(input, n):
     while h:
         results.append(heappop(h))
     return results[::-1]</code></pre>
-
 <p>As far as I know, this implementation is correct, and the Python interpeter handles it fine - but it's not written for humans. Here's my best attempt at the same operation, written with a human audience in mind:</p>
 <pre><code class="language-python">import heapq
 
@@ -92,7 +89,6 @@ def nlargest_unique(iterable, n):
                 heapq.heappushpop(heap, item)
                 unique.add(item)
     return sorted(heap, reverse=True)</code></pre>
-
 <p>Hopefully you're with me in preferring to read this version to the original! We won't try to properly cover <em>what</em> makes a program easy for humans to read in this essay. But briefly, here's some of the differences between the two implementations: docstrings, comments, simplified control flow, variable names, keyword arguments and high-level language constructs.</p>
 <blockquote class="blockquote">
 <p>Any fool can write code that a computer can understand. Good programmers write code that humans can understand.

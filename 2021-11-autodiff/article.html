@@ -69,7 +69,6 @@ class Tensor:
     @property
     def requires_grad(self) -&gt; bool:
         return self.grad is not None</code></pre>
-
 <p>Here <code>grad</code> is the gradient of some global scalar (typically “loss”) with respect to <code>value</code>. It’s <code>Optional</code> because some tensors won’t need gradients. Next, <code>backpropagate</code> is a function that fills in gradients for any inputs that produced this tensor and is <code>Optional</code> because some tensors don’t have inputs e.g. the constant $2$. Finally, <code>parents</code> is a list of inputs (the same inputs that are updated by <code>backpropagate</code>), which tells our autodiff algorithm which tensors to visit after computing <code>grad</code>.</p>
 <p>Next, we need to be able to create tensors. These can be “initial tensors” created from arrays, either of input data or trainable parameters. Or they can be “result tensors” from operations run on other tensors, supporting backpropagation. We choose a factory function for creating initial tensors, and a function decorator to automate creation of result tensors:</p>
 <pre><code class="language-python">class Tensor:
@@ -100,7 +99,6 @@ def operation(fn: Callable[..., Tuple[Array, BackpropFn]]) -&gt; Callable[..., T
         )
 
     return wrapper</code></pre>
-
 <p>The difference between the two types of tensor is evident here. An initial tensor created by <code>wrap</code> doesn’t have any parents or perform backpropagation. It can still receive a gradient, needed for trainable parameters. A result tensor created by an <code>operation</code> supports backpropagation to its inputs, as defined by the specific operation.</p>
 <p>Note that <code>Tensor.wrap()</code> of the inputs to an operation is just for convenience, it means that you will be able to write <code>Op.add(x, 2)</code> rather than the cumbersome <code>Op.add(x, Tensor.wrap(2, requires_grad=False))</code>.</p>
 <h2 id="get-back">Get Back</h2>
@@ -119,7 +117,6 @@ def operation(fn: Callable[..., Tuple[Array, BackpropFn]]) -&gt; Callable[..., T
         for tensor in reversed(list(self._dependency_order(set()))):
             if tensor.backpropagate is not None:
                 tensor.backpropagate(tensor.grad)</code></pre>
-
 <p>The key thing here is to walk through the graph of operations in reverse dependency order. If the forward graph looks like <code>A -&gt; B -&gt; C</code>, the local backpropagation operations must run in order <code>[C, B, A]</code>. It’s easiest to define a forward dependency order traversal (<code>_dependency_order</code>) then reverse it. Then, to run the backward pass, we set our gradient to <code>1</code>, as $\frac{\partial L}{\partial L} = 1$ and run the local backpropagation operations in order. Each <code>BackpropFn</code> will accumulate gradient information into its inputs before <code>backward()</code> visits them to continue backpropagation.</p>
 <p>That’s actually it for the core library, but things won’t really make sense until we look at a few operations.</p>
 <h2 id="put-the-message-in-the-box">Put The Message In The Box</h2>
@@ -130,7 +127,6 @@ def relu(x: Tensor) -&gt; Tuple[Array, BackpropFn]:
         x.grad += grad * (x.value &gt; 0)
 
     return np.maximum(x.value, 0), backpropagate</code></pre>
-
 <p>This is a typical example of using the <code>@operation</code> decorator to create a result tensor with everything needed for backpropagation. The forward pass implementation is on the last line <code>np.maximum(x.value, 0)</code>. But we also need to return a function that accumulates gradient through the ReLU to the input. It’s convenient to define these two together, because the gradient computation might need to capture information from the forward pass. In this case our function captures the input <code>x</code> in a closure.</p>
 <p>Another thing to notice is that instead of setting <code>x.grad[...] = &lt;grad&gt;</code>, we accumulate <code>x.grad += &lt;grad&gt;</code>. This is because we have implicit copying of tensors in the forward pass. If <code>x</code> was used for a <code>relu</code> and some other operation in the forward pass, it should sum the gradients from the two branches in the backward pass.</p>
 <p>Next, matrix multiplication:</p>
@@ -143,7 +139,6 @@ def matmul(x: Tensor, y: Tensor) -&gt; Tuple[Array, BackpropFn]:
             y.grad += x.value.T @ grad
 
     return x.value @ y.value, backpropagate</code></pre>
-
 <p><code>matmul</code> needs to capture both inputs for the backward pass. To be honest, I find it hard to remember which way all the transposes and matrix multiplications go, but thinking of the shapes <code>x: (A, B), y: (B, C), grad: (A, C)</code>, there aren’t really any other ways to write it that’d make sense.</p>
 <p>Here the backward pass is made more efficient by skipping unnecessary gradients based on <code>Tensor.requires_grad</code>. In this case it’s just an optimisation, but for some other operations e.g. <code>power</code>, you might otherwise generate numerical errors for branches that don't require gradients at all.</p>
 <h2 id="suddenly-i-see">Suddenly I See</h2>
@@ -176,7 +171,6 @@ def matmul(x: Tensor, y: Tensor) -&gt; Tuple[Array, BackpropFn]:
         for parameter in self.parameters:
             parameter.value -= self.lr * parameter.grad
         return float(loss.value)</code></pre>
-
 <p>If you’ve used PyTorch, it should look familiar. You have to reset parameter gradients to zero before running the forward pass and you call <code>loss.backward()</code> before an optimiser update using <code>parameter.grad</code>.</p>
 <p>There are a few things that feel painful here - you can’t write <code>x @ self.W0</code> because we haven’t defined any operators on <code>Tensor</code>, and there’s no implicit broadcasting so adding bias looks particularly messy. But these would be easy to remedy with a few tweaks to the implementation.</p>
 <h2 id="all-i-got">All I Got</h2>

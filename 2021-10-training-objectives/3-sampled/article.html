@@ -85,7 +85,6 @@ scores = T.cat([label_scores[:, np.newaxis], noise_scores], dim=1)
 loss = T.nn.functional.cross_entropy(scores, T.zeros(batch_size, dtype=T.long))
 print(float(loss))
 loss.backward()</code></pre>
-
 <p>Since this is somewhat complex, let's walk through step-by-step:</p>
 <ol>
 <li>

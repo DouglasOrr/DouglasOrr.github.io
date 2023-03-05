@@ -30,13 +30,11 @@
   Find:         predict(x) -&gt; y
   To maximise:  sum [ metric(predict(x), y) ] over {(x, y)}_test
   Given:        {(x, y)}_train</code></pre>
-
 <p>The new game is <strong>multi-armed contextual bandit learning</strong>. You're shown an image and must choose "airplane", "automobile" or "bird". After choosing one, you are given a reward if you got it right, and no reward if you got it wrong. You aren't told the target answer, only whether you got a reward or not. There is also no separate test phase, training &amp; test are a single phase, and you're graded as you learn.</p>
 <pre><code class="language-none"># Multi-armed contextual bandit learning
   Find:         predict(x) -&gt; a
   To maximise:  sum [ reward(predict(x)) ]
   Given:        reward(a) after each step</code></pre>
-
 <h2 id="core-idea">Core idea</h2>
 <p>Value function estimation is a technique designed for bandit problems and their more complex cousin, reinforcement learning. But in this article, we'll apply it back to our standard supervised learning problem we've used so far in our series. This means we can focus on the new type of loss without having to worry about other aspects of bandits / RL.</p>
 <p>The core problem we need to solve is to create a <em>reward-based loss</em> rather than a <em>target-based loss</em>. A reward-based loss is given feedback for the chosen prediction "was I right or wrong?", while a target-based loss is given the correct answer "was it a horse, cat, bird, etc?" Evidently, a reward-based loss is a harder problem since you're given less information to help you learn.</p>
@@ -107,7 +105,6 @@ loss = T.nn.functional.binary_cross_entropy_with_logits(
 )
 print(float(loss))
 loss.backward()</code></pre>
-
 <p><strong>1. Predict values for each possible action:</strong> Nothing special here - we run our model and get a vector of value logits for each possible action. Hold on for an explanation of the term <em>logit</em>, for now we can think of them as scores.</p>
 <p><strong>2. Use a policy to select an action &amp; obtain reward:</strong> Implement an epsilon-greedy policy following equation \eqref{eqn:policy}, to choose one action for each element of a batch. In this case an action is just an integer. Then, obtain a reward for the chosen action, in this case by comparing with the known target label. This is all wrapped in a <code>T.no_grad()</code>, demonstrating that there is no gradient flow through this logic.</p>
 <p><strong>3. Train the selected action's value:</strong> From this point, it's just regular supervised learning. The only unsual thing is that there is only a target for one of the predicted values, corresponding to the action that was chosen in step 2. There is no loss or gradient for any other predicted value. The loss function is chosen to match the task. In this case the reward is either 0 (wrong prediction) or 1 (correct prediction), so binary cross entropy with a sigmoid nonlinearity is the obvious choice.</p>

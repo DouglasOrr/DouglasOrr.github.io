@@ -37,7 +37,6 @@ Test coverage: 96%
 Test duration 2.7s
 
 Report generated on 23rd Feb &#x27;20</code></pre>
-
 <p>This is a reasonable &amp; easy-to-read format for a human, but the task of writing another program to process the output sounds like a right old pain!</p>
 <p>When I go with this design, everything's OK while I'm just running the tests myself &amp; scanning the results. But one day I start running the tests in continuous integration, and I stop looking at the output. Soon after, I want to write another program to track the trend of test coverage over time. Now the test output data has no human audience, but multiple machines consuming the output downstream (and eventually preparing a human-readable summary).</p>
 <p>Let's have another go. I redesign my output with a focus on machine-readability, so the test execution program generates (reformatted &amp; abbreviated here, with due irony, for ease of reading):</p>
@@ -48,7 +47,6 @@ Report generated on 23rd Feb &#x27;20</code></pre>
  &quot;coverage&quot;: {&quot;base.bar&quot;: {&quot;covered&quot;: 44, &quot;total&quot;: 50}, ...},
  &quot;duration&quot;: 2.71828,
  &quot;generated&quot;: &quot;2020-02-23T15:28:51Z&quot;}</code></pre>
-
 <p>Using this output, it would be easy to recreate the original report for a "direct" human interface, but equally easy to parse for another purpose - to track coverage over time or aggregate into a super-report containing other build &amp; test data, etc. This is what "designing data for machines" looks like.</p>
 <p>We won't go into how to design data formats for machines, but in this case the main differences are that it contains full information that was summarised for the human and is in standard portable formats (JSON, ISO 8601). Note: we could have gone further - it is still a text-based container format that can be read by humans, rather than a binary format (e.g. Avro or Protocol Buffers).</p>
 <p>In summary, one simple test to apply when designing data formats for machines is: <strong>"How would I feel if I had to write a parser for this data?"</strong></p>
@@ -74,7 +72,6 @@ def move(src, dest):
     except OSError as e:
         print(f&#x27;Error! could not move {src} to {dest}: {e}&#x27;)
         exit(1)</code></pre>
-
 <p>This function may be fine in a small single-purpose script, but in a larger program it is a recipe for pain. It assumes that it owns the user interaction, so is uniquely able to tell the user about their error (although in generic terms). The error message is reported over stdout, which in Unix is a bad idea - what if stdout is being piped into another program? Finally, there is no chance for the caller to handle the error (without abusing Python's dynamism) as the function calls <code>exit()</code> directly. The output is designed for humans at the expense of machines (so, at the expense of composability).</p>
 <p><em>Note: there isn't a need for a "better version" of this function, as all it does is wrap <code>os.rename</code> to make it worse!</em></p>
 <h2 id="what-should-i-do">What should I do?</h2>

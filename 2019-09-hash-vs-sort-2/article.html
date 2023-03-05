@@ -38,7 +38,6 @@
 <p>We implemented both <em>sort-unique</em> and <em>hash-unique</em> in Javascript, and benchmarked it as a standalone script using Node.js. The implementation of <em>hash-unique</em> was very easy:</p>
 <pre><code class="language-javascript">let unique = new Set(items);
 return Array.from(unique);</code></pre>
-
 <p>However, <em>sort-unique</em> required our own adjacent-unique loop, as there is no equivalent of <code>std::unique</code> in Javascript's built-ins (<a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.js">code here</a>). Here are the results (median runtime):</p>
 <table class="table">
 <thead>

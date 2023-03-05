@@ -57,7 +57,6 @@
    def backward(ctx, grad_output):
        input, = ctx.saved_tensors
        return grad_output * (T.abs_(input) &lt;= 1)</code></pre>
-
 <p>I used this nonlinearity in a RNN cell based on the recurrent highway network,</p>
 <p>$$\begin{align}
 &amp;h^{t+1} = \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\
@@ -82,7 +81,6 @@ for next &lt;- states ordered by (abs . mean) ascending
     ]
     solution &lt;- solution[:dest] + [next] + solution[dest:]
 end</code></pre>
-
 <p>The idea is to first pick a fixed start and end and an overall order for considering states. Then at each step, insert the next state at the location with the best total similarity. This algorithm gave me my row order, so finally, I was done:</p>
 <p><img alt="grid of blue and white pixels with some correlation, with more visible structure" class="img-fluid" src="img/phone_case_pattern.png" /></p>
 <p>I'm not sure there's much substantial insight to be gained from this visualisation, but it does the job of decorating a phone. Hidden units in this model show strong temporal correlation - the states are somewhat "sticky" (looking left-right along a single row). But this is no surprise given the RHN cell definition, which bakes this into the update rule. Also, some groups of units transition at the same point in time (looking up-down along a single column), an effect that is enhanced by the similarity-based row ordering.</p>

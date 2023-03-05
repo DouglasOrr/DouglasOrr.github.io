@@ -29,7 +29,6 @@
 auto results = find_unique(items);
 // =&gt; {10, 20, 30}
 // (or {20, 10, 30}, etc.)</code></pre>
-
 <p>Although it's a very simple problem, I found the benchmarking results a bit surprising - investigating this has changed my mental model of what makes code fast or slow.</p>
 <h2 id="how-to-find-unique-items-sorting">How to find unique items - sorting</h2>
 <p>Both methods are based on the same idea: we need to collect identical items together in the same place, so we know where to look for the duplicates. One way to do this is to <strong>sort</strong> the items, after which any duplicates will now be adjacent, so we can make a second pass to scan through, removing adjacent duplicates. It looks a bit like this:</p>

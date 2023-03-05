@@ -21,7 +21,6 @@
     <div class="row">
       <div class="col">
         <script src="demo/demoecho.js"></script>
-
 <p><link rel="stylesheet" href="demo/style.css"></p>
 <h1 id="rasterised-ray-tracing-of-sound-in-javascript">Rasterised ray tracing of sound in JavaScript</h1>
 <p>In my recent Game Jam game, <a href="https://douglasorr.itch.io/fad">FAD</a>, the player controls a submarine navigating a 2D pixelated world that they can’t see. To do this they eventually get to use an active sonar ping. Here’s how it sounds (and looks in “cheat mode”):</p>
@@ -55,12 +54,10 @@ const terrain = [1, 1, ..., 1, 1,
                  1, 1, ..., 0, 1,
                  1, 1, ..., 1, 1];
 const width = 128;</code></pre>
-
 <p>In this format, the position <code>[x, y]</code> is located inside cell <code>terrain[width * Math.floor(y) + Math.floor(x)]</code>. Terrain cells <code>= 1</code> are reflective, while those <code>= 0</code> are transmissive, and the boat is always positioned within <code>0</code> cells. We can also assume the terrain grid has a border of reflective <code>1</code> cells, so we shouldn’t have to run a bounds check.</p>
 <p>The echo range map is generated for a fixed number of evenly spaced directions, and looks like this (for 4 steps):</p>
 <pre><code class="language-js">//                  0  .5π    π  1.5π
 const rangeMap = [4.3, 4.0, 2.0, 2.5];</code></pre>
-
 <p>Note that these directions are relative to the boat's bearing when sending the ping, such that $0$ is in front, $\pi/2$ is due right, etc.</p>
 <p>Our approach for generating this echo range map is simple, if a bit unrealistic:</p>
 <ul>
@@ -98,7 +95,6 @@ const rangeMap = [4.3, 4.0, 2.0, 2.5];</code></pre>
         }
     }
 }</code></pre>
-
 <p>The idea of this algorithm is to first work out which axis component (X or Y) increases fastest in the ray direction. Set the step size for this "major" axis to 1 pixel, then calculate the corresponding step size ($\le 1$ pixel) in the "minor" axis. The rasterisation loop then walks from the starting point using this (X, Y) step, rounding the fractional minor value to the nearest pixel.</p>
 <p>Here is the physics component in action, generating an echo range map with 4 directions:</p>
 <div id="demo-physics" class="demo-box" tabindex="0">
@@ -139,7 +135,6 @@ const rangeMap = [4.3, 4.0, 2.0, 2.5];</code></pre>
     oscillator.start(startTime);
     oscillator.stop(startTime + duration);
 }</code></pre>
-
 <p>Here it is in action. We chose frequency (700 Hz) to trade off clarity against annoyance, and duration (0.04 s) to trade precision against audibility.</p>
 <div id="demo-ping" class="demo-box" tabindex="0">
     <div>
@@ -182,7 +177,6 @@ for (const echo of echoes) {
         .connect(merge, 0, 1);
     merge.connect(ctx.destination);
 }</code></pre>
-
 <p>Here is the whole audio component, with some fiddly manual controls for 4 echo components and parameters decay $\alpha$ dB/px and wave speed $c$ px/s. Note that these echo directions do not exhibit audible left-right delay, so we omit maximum left-right delay $\delta$ s which does not affect the sound in this case. We recommend listening with headphones.</p>
 <div id="demo-echo" class="demo-box" tabindex="0">
     <div>
@@ -218,7 +212,6 @@ for (const echo of echoes) {
 <p>One very cool feature of Web Audio is that you can write custom audio processing nodes, called audio worklets, directly in JavaScript. Using this feature, we can generate all echoes from a single custom node<sup id="fnref:convolution"><a class="footnote-ref" href="#fn:convolution">2</a></sup>.</p>
 <p>Our new node is a “mono-to-stereo multiple delay and gain”. Given a fixed list of delays and gains for left &amp; right channels and a single mono input, it should apply and sum these to a single stereo output. As we had previously, the input specification looks like this:</p>
 <pre><code class="language-js">[{delayLeft: 1.0, gainLeft: 0.2, delayRight: 1.1, gainRight: 0.05}, ...]</code></pre>
-
 <p>The audio worklet does all its work in <code>process(inputs, outputs)</code>, which reads a chunk of samples called a render quantum from <code>inputs</code> and writes to <code>outputs</code>. It should do this as quickly as possible and avoid any memory allocation, since failure to meet strict timing requirements would cause audio stutter.</p>
 <p>To implement our effect, we’ll maintain two circular buffers of mixed audio - one for each output channel. In the first part of <code>process</code>, we read the input and accumulate each echo into the appropriate (delayed) position in the circular buffers. We also update a pointer to the last written location, so that the audio node knows when to terminate.</p>
 <pre><code class="language-js">// In demoechoworklet.js
@@ -239,7 +232,6 @@ if (inputs[0].length) {
     }
     this.lastWriteIdx = (this.readIdx + renderQuantum + this.maxDelay) % N;
 }</code></pre>
-
 <p>After this snippet runs, the circular buffers contain future audio samples being accumulated. And the next render quantum is fully accumulated and ready to emit.</p>
 <p>The second part of <code>process</code> is simpler: copy and zero out the next section of the circular buffers. It’s important to zero the buffers here, since the writer will eventually wrap around and accumulate into the same slots again from future input samples.</p>
 <p>Finally, we detect when the read pointer catches up with the “last written” pointer, so that the node is properly terminated.</p>
@@ -254,7 +246,6 @@ for (let i = 0; i &lt; renderQuantum &amp;&amp; this.readIdx !== this.lastWriteI
     this.readIdx = (this.readIdx + 1) % N;
 }
 return this.readIdx !== this.lastWriteIdx;</code></pre>
-
 <p>Finally, we register, load, instantiate and connect the new audio worklet:</p>
 <pre><code class="language-js">// In demoechoworklet.js
 registerProcessor(&quot;echo-processor&quot;, EchoProcessor);
@@ -269,7 +260,6 @@ ping.connect(new AudioWorkletNode(ctx, &quot;echo-processor&quot;, {
     outputChannelCount: [2],
     processorOptions: { echoes: echoes },
 })).connect(ctx.destination);</code></pre>
-
 <p>You can run this by toggling the checkbox in <a href="#demo-echo">#4 echo effect</a> above. It should sound exactly the same. Note that this might not work on all browsers, though.</p>
 <h2 id="conclusion">Conclusion</h2>
 <p>This was part of my story behind FAD. There were a few general takeaways for me, although some of these aren't related to the core tech we've covered here:</p>

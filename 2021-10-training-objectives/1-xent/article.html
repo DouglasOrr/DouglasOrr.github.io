@@ -62,7 +62,6 @@ outputs = ...
 loss = T.nn.functional.cross_entropy(outputs, labels)
 print(float(loss))
 loss.backward()</code></pre>
-
 <p>The model produces <code>outputs</code>, which are typically shaped <code>(batch x num_classes)</code>, and the function <code>T.nn.functional.cross_entropy</code> (or alternatively the module <code>T.nn.CrossEntropyLoss</code>) implements the softmax + cross entropy equation \eqref{eqn:loss}.</p>
 <h2 id="what-does-it-do">What does it do?</h2>
 <p>In the forward pass, we start with a vector of floating point numbers from our model. We can think of these as scores for each class:</p>
