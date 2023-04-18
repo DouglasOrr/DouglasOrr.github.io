@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="deep-learning,training,tutorial" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Policy Gradient Estimation</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="deep-learning,training,tutorial">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Policy Gradient Estimation</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="policy-gradient-estimation">Policy Gradient Estimation</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="policy-gradient-estimation">Policy Gradient Estimation</h1>
 <p>Policy gradient estimation is a popular technique for reinforcement learning (RL). It can optimise models to take good actions, even when the feedback provided for these actions is non-differentiable and includes randomness.</p>
 <p>This is part of our series on <a href="../1-xent/article.html">training objectives</a>, where we're looking at various objectives to use to train a deep learning classifier. In the last segment, we saw <a href="../4-value/article.html">value function estimation</a>, which can address similar problems to policy gradient estimation.</p>
 <p>Of all the algorithms we've visited in this series, I find policy gradients the most magical. When first introduced to it, I was surprised it can work at all. And thinking through it has helped me understand loss function design a little deeper. I hope it can pique your curiosity too!</p>
@@ -174,18 +175,23 @@ G = \sum_a \pi(a|x) R(a) \nonumber\\
 \frac{\partial G}{\partial\theta} &amp;= \sum_a R(a) \pi(a|x) \frac{\partial}{\partial\theta}(\log \pi(a|x)) \nonumber\\
 &amp;= E_{\tilde{a} \sim \pi(a|x)} \,\left[ R(\tilde{a}) \,\frac{\partial}{\partial \theta}(\log \pi(\tilde{a}|x)) \right] \nonumber\
 \end{eqnarray}</p>
-<p>Now we can use sampling to estimate the expectation, even with a single sampled action $\tilde{a}$.</p>
+<p>Now we can use sampling to estimate the expectation, even with a single sampled action $\tilde{a}$.</p></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

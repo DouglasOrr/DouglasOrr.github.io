@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="deep-learning,training,tutorial" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Value Function Estimation</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="deep-learning,training,tutorial">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Value Function Estimation</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="value-function-estimation">Value Function Estimation</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="value-function-estimation">Value Function Estimation</h1>
 <p>Value function estimation is a key component of many reinforcement learning (RL) algorithms. It can optimise a model indirectly, without being told the right answer during training.</p>
 <p>This is part of our series on <a href="../1-xent/article.html">training objectives</a>, where we're looking at various objectives to use to train a (deep learning) classifier. We've covered some minor variations on softmax cross entropy, but this is our first major departure. Now we'll try something considerably harder - to train our classifier without being told the right answer directly.</p>
 <h2 id="the-new-game">The new game</h2>
@@ -147,18 +148,23 @@ loss.backward()</code></pre>
 <ul>
 <li>Value functions in RL: <a href="https://papers.nips.cc/paper/1999/hash/464d828b85b0bed98e80ade0a5c43b0f-Abstract.html">Policy Gradient Methods for Reinforcement Learning with Function Approximation</a>, <em>Sutton S, McAllester D, Singh S, Mansour Y.</em></li>
 <li>CIFAR-10: <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Learning multiple layers of features from tiny images</a>, <em>Krizhevsky A, Hinton G.</em></li>
-</ul>
+</ul></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

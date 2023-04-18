@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="javascript,audio,sound,webaudio,game" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Rasterised ray tracing of sound in JavaScript</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="javascript,audio,sound,webaudio,game">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Rasterised ray tracing of sound in JavaScript</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <script src="demo/demoecho.js"></script>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><script src="demo/demoecho.js"></script>
 <p><link rel="stylesheet" href="demo/style.css"></p>
 <h1 id="rasterised-ray-tracing-of-sound-in-javascript">Rasterised ray tracing of sound in JavaScript</h1>
 <p>In my recent Game Jam game, <a href="https://douglasorr.itch.io/fad">FAD</a>, the player controls a submarine navigating a 2D pixelated world that they can’t see. To do this they eventually get to use an active sonar ping. Here’s how it sounds (and looks in “cheat mode”):</p>
@@ -280,18 +281,23 @@ ping.connect(new AudioWorkletNode(ctx, &quot;echo-processor&quot;, {
 <p>Note that it's also possible to do this with a single built-in <code>ConvolverNode</code>, but this would be quite inefficient, as the impulse response buffer would be sparse and large.&#160;<a class="footnote-backref" href="#fnref:convolution" title="Jump back to footnote 2 in the text">&#8617;</a></p>
 </li>
 </ol>
-</div>
+</div></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

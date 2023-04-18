@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="deep-learning,training,tutorial" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Teacher-Student Training</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="deep-learning,training,tutorial">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Teacher-Student Training</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="teacher-student-training-aka-knowledge-distillation">Teacher-Student Training (aka Knowledge Distillation)</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="teacher-student-training-aka-knowledge-distillation">Teacher-Student Training (aka Knowledge Distillation)</h1>
 <p>Teacher-student training is a technique for speeding up training and improving convergence of a neural network, given a pretrained "teacher" network. It's very popular and effective, commonly used to train smaller, cheaper networks from larger, more expensive ones.</p>
 <p>In this article, we'll think through the core idea of teacher-student training, see how to implement it in PyTorch, and finally look at what actually happens when we use this loss. This is part of our series on <a href="../1-xent/article.html">training objectives</a>, and if you're not familiar with softmax cross entropy, <a href="../1-xent/article.html#softmax-cross-entropy-loss">our introduction</a> to that would be a useful pre-read.</p>
 <h2 id="core-idea">Core idea</h2>
@@ -108,18 +109,23 @@ loss.backward()</code></pre>
 <ul>
 <li>Knowledge Distillation: <a href="https://arxiv.org/abs/1503.02531">Distilling the Knowledge in a Neural Network</a>, <em>Hinton G, Vinyals O, Dean J.</em></li>
 <li>CIFAR-10: <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Learning multiple layers of features from tiny images</a>, <em>Krizhevsky A.</em></li>
-</ul>
+</ul></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

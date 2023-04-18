@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="deep-learning,training,tutorial" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Classifier review</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="deep-learning,training,tutorial">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Classifier review</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="how-to-train-your-classifier-review">How to train your classifier - review</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="how-to-train-your-classifier-review">How to train your classifier - review</h1>
 <p>This is the final part in our series on <a href="../1-xent/article.html">training objectives</a>, exploring objectives you could use to train a deep learning classifier.</p>
 <p>We've met softmax cross entropy, teacher-student training, sampled softmax, value function estimation and policy gradients. We reviewed the core ideas and walked through a typical forward and backward pass. All that's remains is to provide some demo code, so you can play around with these at your leisure.</p>
 <h2 id="demo-code">Demo code</h2>
@@ -52,18 +53,23 @@
 <ul>
 <li><a href="https://pytorch.org/">PyTorch</a>.</li>
 <li>CIFAR-10: <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Learning multiple layers of features from tiny images</a>, <em>Krizhevsky A, Hinton G.</em></li>
-</ul>
+</ul></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

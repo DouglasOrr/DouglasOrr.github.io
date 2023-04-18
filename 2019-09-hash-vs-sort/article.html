@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="C++,unique,distinct,deduplication,hashset" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Hash vs Sort</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="C++,unique,distinct,deduplication,hashset">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Hash vs Sort</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="finding-unique-items-hash-vs-sort">Finding unique items - hash vs sort?</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="finding-unique-items-hash-vs-sort">Finding unique items - hash vs sort?</h1>
 <p><strong>[Part 1]</strong>, <a href="../2019-09-hash-vs-sort-2/article.html">[Part 2]</a></p>
 <p>A while back, I was trying to speed up some code which finds unique items in a collection. For example, transforming <code>"AABBADCAB" =&gt; "ABDC"</code>. There are two ways to do this efficiently - one is based on sorting, the other based on hashing. So, <em>which is faster?</em> I couldn't find the answer, so I ran some experiments and here are the results.</p>
 <p>We'll start with C++, but we'll see if these results generalise to a couple of other popular languages in part 2. We'll begin by specifying the problem more precisely.</p>
@@ -151,18 +152,23 @@ Memory: 8 GB DDR3, 1600 MT/s
 OS: Ubuntu 18.04 (64 bit), in Docker
 C++: gcc version 7.4.0  [flags: -O2 -std=c++17]
 Javascript: Node.js v10.16.3
-Java: OpenJDK 11.0.4</code></pre></p>
+Java: OpenJDK 11.0.4</code></pre></p></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>

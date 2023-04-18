@@ -1,26 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="deep-learning,autodiff,frameworks,numpy" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Autodiff from scratch</title>
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <meta name="author" content="Douglas Orr">
-  <meta name="keywords" content="deep-learning,autodiff,frameworks,numpy">
-  <link rel="stylesheet" href="/css/lib.css">
-  <link rel="stylesheet" href="/css/custom.css">
-  <script type="text/javascript" src="/js/custom.js" defer></script>
-  <script type="text/javascript" src="/js/lib.js" defer></script>
-  <title>Autodiff from scratch</title>
-</head>
-
-<body>
-  <nav class="navbar navbar-dark bg-dark">
-    <a class="navbar-brand" href="/">Doug's Diversions</a>
-  </nav>
-  <div class="container dd-root">
-    <div class="row">
-      <div class="col">
-        <h1 id="autodiff-from-scratch">Autodiff from scratch</h1>
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="autodiff-from-scratch">Autodiff from scratch</h1>
 <p>Autodiff is the heart of a deep learning framework<sup id="fnref:heart"><a class="footnote-ref" href="#fn:heart">1</a></sup>. But it’s very easy to take it for granted and never peek under the hood to see how the engine works. So in this post, we'll make sure we understand the basics by implementing autodiff in a few lines of numpy.</p>
 <p>This post is a guided walk though the basic bits of a usable autodiff implementation. If you would rather just read the code, jump straight to our notebook on <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">GitHub</a> or <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">Colab</a>.</p>
 <p><em>Tiny autodiff is no new idea - see also Andrej Karpathy's <a href="https://github.com/karpathy/micrograd">micrograd</a>, amongst others.</em></p>
@@ -196,18 +197,23 @@ def matmul(x: Tensor, y: Tensor) -&gt; Tuple[Array, BackpropFn]:
 <p>Here we're just going to think about reverse mode automatic differentiation. There are <a href="https://en.wikipedia.org/wiki/Automatic_differentiation">other sorts</a>.&#160;<a class="footnote-backref" href="#fnref:reverse" title="Jump back to footnote 3 in the text">&#8617;</a></p>
 </li>
 </ol>
-</div>
+</div></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
       </div>
     </div>
-    <div class="row dd-footer">
-      <div class="col">
-        <p>Note: All views or opinions expressed here are those of the author at time of writing and do not represent
-          those of any employer or other organisation, past or present.</p>
-        <p>Please let me know of errors or missing references by <a
-            href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues">raising an issue on GitHub</a>.</p>
-      </div>
-    </div>
-  </div>
-</body>
-
+  </body>
 </html>
