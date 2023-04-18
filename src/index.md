@@ -5,8 +5,9 @@ keywords: douglasorr
 
 My grab bag of various diversions/essays about machine learning and software engineering.
 
-
 ## Index
+
+2023-03 - [Metaphor thinking in deep learning](2023-03-deep-metaphors/article.md)
 
 2022-01 - [Rasterized ray tracing of sound in Javascript](2021-12-echolocation/article.md)
 
