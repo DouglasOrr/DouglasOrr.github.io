@@ -3,9 +3,9 @@ keywords: douglasorr
 
 # Doug's Diversions
 
-My grab bag of various diversions/essays about machine learning and software engineering.
+My grab bag of various diversions/essays mostly about machine learning and software engineering, but some [other topics](#other) too.
 
-## Index
+## ML/Software
 
 2023-03 - [Metaphor thinking in deep learning](2023-03-deep-metaphors/article.md)
 
@@ -20,3 +20,7 @@ My grab bag of various diversions/essays about machine learning and software eng
 2020-03 - [Write code for humans, design data for machines \[part 1\]](2020-03-data-for-machines/article.md) [\[part 2\]](2020-03-data-for-machines-2/article.md)
 
 2019-09 - [Finding unique items - hash vs sort? \[part 1\]](2019-09-hash-vs-sort/article.md) [\[part 2\]](2019-09-hash-vs-sort-2/article.md)
+
+## Other
+
+2024-02 - [One {what} one vote](2024-02-one-vote/article.md)
