@@ -7,6 +7,8 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 ## ML/Software
 
+2024-04 - [A transformer walk-through, with Gemma](2024-04-transformers/article.md)
+
 2023-03 - [Metaphor thinking in deep learning](2023-03-deep-metaphors/article.md)
 
 2022-01 - [Rasterized ray tracing of sound in Javascript](2021-12-echolocation/article.md)

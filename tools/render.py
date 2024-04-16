@@ -111,6 +111,7 @@ class RenderRule(Rule):
             "tables",
             "toc",
             "footnotes",
+            "md_in_html",
         ]
     )
 
