@@ -426,7 +426,7 @@ A final figure might help review the journey we've been on, from ReLU -> ReGLU -
 
 ![Three line plots, shown as x[0] varies from -2 to 2. The first, ReLU, is piecewise linear. The second, ReGLU, is piecewise quadratic with gradient discontinuities. The third, GeGLU, is smooth but still vaguely quadratic.](img/mlp_slice.png)
 
-So Gemma's MLP, the GeGLU, can be thought of as a piecewise-quadratic function with smooth boundaries between the pieces. Where our example had 6 regions across a 2-vector input, Gemma's MLPs can have up to 32768 regions across their 2048-vector input.
+So Gemma's MLP, the GeGLU, can be thought of as a piecewise-quadratic function with smooth boundaries between the pieces. Where our example had 6 regions across a 2-vector input, Gemma's MLPs may have a vast number of regions (perhaps $10^{2000}$) across their 2048-vector input.
 
 The purpose of the MLP in Gemma is to use this function to independently transform each token, ready to form another attention query or ready to match against output tokens. Although MLPs cannot fuse information from across the context by themselves (which is the fundamental task of a language model), our experience shows that including the MLP makes attention much more efficient at doing exactly this.
 
