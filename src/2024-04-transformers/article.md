@@ -364,15 +364,34 @@ First, make two separate projections (dot products with trained parameter matric
 
 <details markdown="1"><summary>Understanding the MLP</summary>
 
-The MLP is a function from a 2048-vector representing a single token to a 2048-vector. The code shown above runs in parallel over the sequence axis, but unlike in attention, each token is processed independently. In this section, we'll build up the complex behaviour of Gemma's GeGLU MLP with a example based on 2-vectors (and a 3-vector inside the MLP).
+The MLP is a function from a 2048-vector representing a single token to a 2048-vector. The code shown above runs in parallel over the sequence axis, but unlike in attention, each token is processed independently. In this section, we'll build up the complex behaviour of Gemma's GeGLU MLP with a tiny example based on 2-vectors (and a 3-vector inside the MLP).
 
-**A. ReLU**
+_Note that the acronym MLP stands for multi-layer perceptron, which is slightly old-fashioned language to talk about a chain of dot product (projections) and nonlinearities._
 
-We start with a simplified version specified by the original transformer model, using the _rectified linear unit_ or ReLU, `relu(a) = max(0, a)`:
+**A. Linear**
+
+We start with a simple linear projection (dot product) from input to output, specified by a random $2 \times 2$ matrix. Each output component is a weighted sum of the inputs. The code is simply:
+
+```python
+y = x @ proj
+# x.shape = y.shape = (2,)
+```
+
+If we look at the first component of the output as a function of the inputs, we see:
+
+![3D surface plot showing a flat slope.](img/mlp_linear.png)
+
+This is what a linear projection always looks like — a flat slope. It's certainly possible for this function to capture some interesting properties of the data, especially when it works on 2048-vectors rather than 2-vectors. However, it will become much more powerful with a few additions.
+
+**B. ReLU**
+
+The core idea of the MLP is that we wish to introduce _depth_ into the model, a sequence of layers that transform the input in steps. However, the dot product has the property that a sequence of dot products can be reduced to a single dot product, i.e. there exists a `proj_b` such that `(x @ proj_1) @ proj_2 == x @ proj_b`.
+
+Sequences of dot products need to be broken up if they're going to be any more powerful than the simple linear projection we've already seen. The simplest way to do this is by transforming each element of the vector individually by an elementwise nonlinear function. One such function is the _rectified linear unit_ or ReLU, `relu(a) = max(0, a)`:
 
 ![Plot of z = relu(a), with a flat portion below zero, then a linear portion above zero.](img/relu.png)
 
-Our ReLU MLP runs:
+Our ReLU MLP now runs:
 
 ```python
 z = relu(x @ gate_proj)
@@ -391,7 +410,7 @@ Once we run the down-projection, each component of `y` is a dot product between 
 
 ![3D surface plot showing a piecewise linear function of two input components. Each piece is coloured as per the pinwheel map above.](img/mlp_relu.png)
 
-**B. ReGLU**
+**C. ReGLU**
 
 These piecewise linear functions are surprisingly powerful already — the pretraining procedure can manipulate the transitions as well as the slopes of each region. But we might propose more power by making each region quadratic rather than linear. This idea gives us the _gated linear unit_ (GLU):
 
@@ -406,7 +425,7 @@ With the same `gate_proj`, the regions in this version are exactly the same as b
 
 Notice we can still have sharp edges at the region boundaries, but within each region the function is now curved.
 
-**C. GeGLU**
+**D. GeGLU**
 
 The final change is to substitute the Gaussian error linear unit (GELU) for the ReLU. The definition isn't too important for our discussion, just that it looks like a smoother version of ReLU:
 
@@ -422,9 +441,9 @@ Our approach of considering distinct regions is broken down by the GELU, which d
 
 **Summary**
 
-A final figure might help review the journey we've been on, from ReLU -> ReGLU -> GeGLU. To make things legible, we're now looking at a slice through the surfaces we've seen so far, setting `x[1]` to a constant value, and just looking at how `y[0]` depends on `x[0]`.
+A final figure might help review the journey we've been on, from Linear -> ReLU -> ReGLU -> GeGLU. To make things legible, we're now looking at a slice through the surfaces we've seen so far, setting `x[1]` to a constant value, and just looking at how `y[0]` depends on `x[0]`.
 
-![Three line plots, shown as x[0] varies from -2 to 2. The first, ReLU, is piecewise linear. The second, ReGLU, is piecewise quadratic with gradient discontinuities. The third, GeGLU, is smooth but still vaguely quadratic.](img/mlp_slice.png)
+![Four line plots, shown as x[0] varies from -2 to 2. The first, linear is linear. The second, ReLU, is piecewise linear. The third, ReGLU, is piecewise quadratic with gradient discontinuities. The fourth, GeGLU, is smooth but still vaguely quadratic.](img/mlp_slice.png)
 
 So Gemma's MLP, the GeGLU, can be thought of as a piecewise-quadratic function with smooth boundaries between the pieces. Where our example had 6 regions across a 2-vector input, Gemma's MLPs may have a vast number of regions (perhaps $10^{2000}$) across their 2048-vector input.
 
