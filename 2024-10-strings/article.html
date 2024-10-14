@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="C++,string,performance" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Benchmarking `std::{string, string_view, reference_wrapper}`</title>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><h1 id="benchmarking-stdstring-string_view-reference_wrapper">Benchmarking <code>std::{string, string_view, reference_wrapper}</code></h1>
+<p>A C++ mantra is that you don't pay for what you don't use<sup id="fnref:zop"><a class="footnote-ref" href="#fn:zop">1</a></sup>. It turns out that <code>std::string</code> has quite a long list of jobs, with which <em>you do pay for what you don't use</em>, both in memory usage and runtime.</p>
+<p>But the STL now provides some handy alternatives — <code>std::string_view</code> and <code>std::reference_wrapper&lt;std::string&gt;</code>. Let's explore &amp; benchmark them in this brief post.</p>
+<h3 id="stdstring-the-do-everything-option"><code>std::string</code> — the "do everything" option</h3>
+<p>A <code>std::string</code> owns a mutable &amp; growable sequence of characters. It owns a <code>char*</code> to a null-terminated C-string, but must also hold the size since the standard requires that <code>.size()</code> takes constant time. It also has a <em>capacity</em>, much like <code>std::vector</code>, since it is often used to build strings iteratively.</p>
+<pre><code class="language-cpp">struct string {
+    char* data;  // owning, null-terminated
+    size_t size;
+    size_t capacity;
+};</code></pre>
+<p><em>Small string optimisation (SSO).</em> When strings are small, they can be stored inside the <code>std::string</code> object itself, rather than as a separate memory allocation, managed by the <code>std::string</code>. This means that a string of length &lt;= 22 (libc++) or 15 (libstdc++) can have no additional memory usage. Slightly abstracted, they look like this:</p>
+<pre><code class="language-cpp">struct sso_string_libcxx {  // libc++-18
+    char[23] data;  // null-terminated
+    uint8_t size;
+};
+struct sso_string_libstdcxx {  // libstdc++-14
+    char* data;  // = &amp;_data[0]
+    size_t size;
+    char[16] _data;  // null-terminated
+};</code></pre>
+<h3 id="stdstring_view-a-span-of-characters"><code>std::string_view</code> — a span of characters</h3>
+<p>Take a <code>std::string</code>, remove its ability to grow (delete <em>capacity</em>), don't require the data to be null-terminated, make it non-owning, and you get a <code>std::string_view</code>. It's pretty straight forward:</p>
+<pre><code class="language-cpp">struct string_view {
+    char* data;  // non-owning
+    size_t size;
+};</code></pre>
+<h3 id="stdreference_wrapperstdstring-the-modern-pointer"><code>std::reference_wrapper&lt;std::string&gt;</code> — the modern pointer</h3>
+<p>If you've already got <code>std::string</code> objects somewhere, you can also use a <code>std::reference_wrapper</code>, which behaves like a copyable and assignable reference to a <code>std::string</code> and can be used in STL collections. It's worth considering because it's small, just a single pointer:</p>
+<pre><code class="language-cpp">struct reference_wrapper&lt;std::string&gt; {
+    std::string* value;
+};</code></pre>
+<p>In our example below, we'll create a <code>std::unordered_map</code> of strings to integers. To do this with <code>std::reference_wrapper</code> requires a few extra explicit template parameters since it doesn't forward the definitions of <code>hash</code> and <code>equal_to</code> by default.</p>
+<pre><code class="language-cpp">std::unordered_map&lt;std::reference_wrapper&lt;const std::string&gt;, size_t,
+    std::hash&lt;std::string&gt;, std::equal_to&lt;std::string&gt;&gt; map;
+// behaves much like a std::unordered_map&lt;std::string, size_t&gt;</code></pre>
+<h2 id="benchmarks">Benchmarks</h2>
+<p>First let's check the sizes, which are exactly what we'd expect from the definitions above:</p>
+<pre><code class="language-none">                        sizeof(std::string): 24 (libc++) 32 (libstdc++)
+                   sizeof(std::string_view): 16
+sizeof(std::reference_wrapper&lt;std::string&gt;): 8</code></pre>
+<p>For our main performance results, we consider the problem of filling and querying a hash map of 1M strings, all of equal length of 4-64 characters, to integers:</p>
+<pre><code class="language-cpp">// given `std::vector&lt;std::string&gt; values`
+std::unordered_map&lt;std::string, size_t&gt; map;
+for (auto i = 0u; i &lt; values.size(); ++i) {
+    map[values[i]] = i;  // insertion
+}
+auto sum = 0u;
+for (auto&amp; value : values) {
+    sum += map.find(value)-&gt;second;  // query
+}</code></pre>
+<p>We test (1) <code>std::string</code>, (2) <code>std::string_view</code> onto the original string, (3) <code>std::string_view</code> with a separate <code>std::vector&lt;char&gt;</code> buffer to hold the data, and (4) <code>std::reference_wrapper</code> of the original string. We look at memory usage, time per insertion and time per query.</p>
+<p><strong>Memory usage</strong></p>
+<p><img alt="A Plot showing memory usage as a function of string length, showing flat lines for std::reference_wrapper and std::string_view, flat-then-slope for std::string, and a smooth curve for std::string_view (pool) which is generally below the std::string line, except for the largest SSO setting for libc++; libc++ and libstdc++ are reasonably similar." class="img-fluid" src="img/bytes_per_entry.png" /></p>
+<p>As expected, <code>std::reference_wrapper</code> is the smallest (assuming the strings are already stored elsewhere), followed by <code>std::string_view</code>. Note the difference between libc++ and libstdc++ here is due to a difference in the <code>std::unordered_map</code> implementation — we're counting memory usage due to the load factor in the hash table.</p>
+<p>We can clearly see the point where the small string optimisation ends — between 11 and 16 bytes for libstdc++ and between 16 and 23 bytes for libc++. Except for libc++ strings of approximately 14-22 bytes (large SSO strings), we see that a <code>std::string_view</code> with a separate pool is more memory-efficient than <code>std::string</code>. This is due to the <code>std::string</code>'s <code>capacity</code> to support efficient growth and null-termination, neither of which are relevant to this benchmark.</p>
+<p><strong>Insertion speed</strong></p>
+<p><img alt="A plot showing insertions per second as a function of string length, showing reasonably flat and equal across most settings (libstdc++ vs libc++ and different implementations). Libstdc++ is generally a little faster than libc++. std::string gets about 30% slower than everything else for large (non-SSO)." class="img-fluid" src="img/fill_rate.png" /></p>
+<p>Here, we notice that <code>std::string</code> insertion is generally a little slower, but then steps down to be considerably slower than everything else for large (non-SSO) strings. It is somewhat surprising that this is slower than <code>std::string_view</code> with a <code>std::vector&lt;char&gt;</code> pool, but it may be because the pre-allocated pool is much more efficient than the generic memory allocator.</p>
+<p>There is also a small fixed difference between libstc++ (faster) and libc++, which we presume is due to the <code>std::unordered_map</code> implementation.</p>
+<p><strong>Query speed</strong></p>
+<p><img alt="A plot showing queries per second as a function of string length, showing flat with a small downward trend, which most implementations and libraries performing similarly. The main exception is std::string and std::reference_wrapper for libc++, which is considerably slower until strings are 45 characters or more. Also, all implementations under libstdc++ have a considerable dip for string length 24." class="img-fluid" src="img/query_rate.png" /></p>
+<p>The first notable effect is that the libc++ <code>std::string</code> and <code>std::reference_wrapper</code> are considerably slower than other methods. This seems to be a trade-off that libc++ has made for SSO strings, obtaining a much more memory-efficient structure (24 bytes with max 22-character SSO) than libstdc++ (32 bytes with max 15-character SSO) by maximising reuse. However, this requires extra unpacking when hashing and comparing. In contrast, a libstdc++ SSO string looks exactly the same as a long string (at query time). Note that the <code>std::string_view</code> (no pool) uses the same data in the same layout as <code>std::string</code>, but runs faster.</p>
+<p>The second effect is that the libstdc++ test performs poorly for 23-character strings, across all implementations. We suspect this might be due to poor alignment, but it isn't clear why the libc++ <code>std::string_view</code> should be immune from this effect unless it is due to the specific implementation of equality/hash in libstdc++. We were careful to interleave execution of our benchmarks to reduce the likelihood that this is due to "bursting noise".</p>
+<p>Interestingly, the additional indirection for <code>std::reference_wrapper</code> seems to have no measurable effect on performance.</p>
+<p><strong>Note:</strong> We also tested for 64k and 16M entries (in place of 1M) and with GCC (in place of Clang), but the results were similar. Additional benchmarking details are given at the end of this post.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>Before diving into this rabbit hole, I hadn't appreciated the trade-offs employed by a <code>std::string</code> in order to do so many jobs, and how easy it is to replace them with STL alternatives. And at this point I should note that I'm by no means the first to explore these topics, for example in <a href="https://stackoverflow.com/a/40129198/3175164">this helpful QA</a>.</p>
+<p>For what it's worth, my takeaways:</p>
+<ul>
+<li>Use <code>std::string</code> for API convenience.</li>
+<li>Use <code>std::reference_wrapper</code> when the <code>std::string</code> is already stored elsewhere, and we want to minimise memory usage.</li>
+<li>Use <code>std::string_view</code> to optimize memory with ownership (using a separate pool), especially when there are substrings that could be aliased.</li>
+</ul>
+<p>If we need to optimize to the maximum, we'll inevitably go full-custom anyway: compressing pointers and sizes, using <a href="https://en.wikipedia.org/wiki/Trie">prefix trees</a>, etc. But the STL gives us a few options in our standard toolkit before we have to go as far as that!</p>
+<div style="height: 5em;"></div>
+
+<hr />
+<h2 id="appendix-benchmarking-notes">Appendix - benchmarking notes</h2>
+<p>Benchmarking <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/tree/examples/2024-10-strings">code is here</a>, and full <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/tree/data/2024-10-strings">data &amp; analysis are here</a>. System details:</p>
+<pre><code class="language-none">     CPU: i7-1165G7, 2.80GHz, 4 cores, 12 MB L3 cache
+  Memory: 16 GB LPDDR4, 4267 MT/s
+Compiler: clang 18.1.3 [flags: -O3 -std=c++20]
+      OS: Ubuntu 24.04.1 [Linux 6.8.0-45 x86_64]</code></pre>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:zop">
+<p>The Zero Overhead Principle, Bjarne Stroustrup, The design and evolution of C++, 1995.&#160;<a class="footnote-backref" href="#fnref:zop" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
