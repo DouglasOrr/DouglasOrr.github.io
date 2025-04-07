@@ -181,7 +181,7 @@ class Builder:
     ]
     SRC_TEMPLATE = "template.html"
     SRC_IGNORE = {".ipynb_checkpoints"}
-    SRC_COPY = {".png", ".jpg", ".svg", ".css", ".js"}
+    SRC_COPY = {".html", ".png", ".jpg", ".svg", ".css", ".js"}
 
     class Error(Exception):
         def __init__(self, path, description):

@@ -1,0 +1,11 @@
+.hv-controls input[type="number"] {
+  width: 3.5em;
+}
+.hv-screen {
+  display: block;
+}
+.hv-equation {
+  display: inline-block;
+  font-size: small;
+  font-family: "Consolas", "Courier New", monospace;
+}
