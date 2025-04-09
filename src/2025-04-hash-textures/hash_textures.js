@@ -279,6 +279,9 @@ function hvInit(root, scrollbarWidth) {
     controls.appendChild(
       createNode(`<input class="hv-reset" type="button" value="Reset"/>`)
     );
+    controls.appendChild(
+      createNode(`<input class="hv-download" type="button" value="Download"/>`)
+    );
     root.appendChild(controls);
   }
 
@@ -308,6 +311,15 @@ function hvInit(root, scrollbarWidth) {
         c.value = printValue(config[c.name], CONFIG_SCHEMA[c.name]);
       });
       render(config);
+    });
+  });
+  root.querySelectorAll(".hv-download").forEach((download) => {
+    download.addEventListener("click", () => {
+      render(config);
+      const a = document.createElement("a");
+      a.download = "hash_texture.png";
+      a.href = document.querySelector(".hv-screen").toDataURL("image/png");
+      a.click();
     });
   });
   if (root.classList.contains("hv-show-controls")) {
