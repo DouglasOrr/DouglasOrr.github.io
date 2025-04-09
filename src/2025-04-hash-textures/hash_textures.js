@@ -10,7 +10,7 @@ const CONFIG_SCHEMA = {
   period: { type: "int", alias: "p", min: 1 },
   threshold: { type: "float", alias: "t", min: 0, max: 1, step: 0.1 },
   // Shape
-  shape_power: { type: "int", alias: "s", min: 1 },
+  shape_power: { type: "int", alias: "s", min: 0 },
   shape_gamma: { type: "float", alias: "g", min: 0, step: 0.125 },
   // Canvas
   width: { type: "int", alias: "w", min: 1 },
@@ -22,8 +22,9 @@ const CONFIG_SCHEMA = {
     type: "option",
     options: [null, "c_x", "c_y", "c_xy", "c_xx", "c_yy", "threshold"],
     default: null,
+    shader: false,
   },
-  fps: { type: "float", default: 5 },
+  fps: { type: "float", default: 5, shader: false },
 };
 
 const CONTROLS = [
@@ -72,34 +73,9 @@ function parseConfigStr(s) {
   return result;
 }
 
-// Core
-
-function hashFn(x, y, c) {
-  const z =
-    c.c_x * x + c.c_y * y + c.c_xy * x * y + c.c_xx * x * x + c.c_yy * y * y;
-  return z % c.period < c.period * c.threshold;
-}
-
-function shapeFn(x, y, c) {
-  const z =
-    (Math.abs((2 * x) / c.width - 1) ** c.shape_power +
-      Math.abs((2 * y) / c.height - 1) ** c.shape_power) **
-    (1 / c.shape_power);
-  return Math.max(1 - z, 0) ** c.shape_gamma;
-}
-
-function drawFn(hash, shape, c) {
-  const color = hash ? c.color0 : c.color1;
-  return [...color, shape * 255];
-}
-
 // Rendering
 
 function hashFnEquation(c) {
-  // return (
-  //   `(${c.c_x}*x + ${c.c_y}*y + ${c.c_xy}*x*y + ${c.c_xx}*x*x + ${c.c_yy}*y*y)` +
-  //   ` % ${c.period} < ${c.threshold.toFixed(2)} * ${c.period}`
-  // );
   let parts = [];
   for (let [n, v] of [
     [c.c_x, "x"],
@@ -120,42 +96,134 @@ function hashFnEquation(c) {
   );
 }
 
-function render(root, c) {
-  // Equation
+// Returns a function render(config)
+function renderer(root) {
   const eqn = root.querySelector(".hv-equation");
-  if (eqn !== null) {
-    eqn.innerHTML = hashFnEquation(c);
-    MathJax.typesetClear([eqn]);
-    MathJax.typeset([eqn]);
-    // MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
-  }
-
-  // Texture
-  // const scale = Math.max(
-  //   1,
-  //   Math.floor(
-  //     Math.min(
-  //       root.offsetWidth / canvas.width,
-  //       root.offsetHeight / canvas.height
-  //     )
-  //   )
-  // );
   const canvas = root.querySelector(".hv-screen");
-  canvas.width = c.width;
-  canvas.height = c.height;
-  const ctx = canvas.getContext("2d");
-  const data = new ImageData(c.width, c.height, {
-    colorSpace: "srgb",
-  });
-  for (let y = 0; y < c.height; ++y) {
-    for (let x = 0; x < c.width; ++x) {
-      const h = hashFn(x, y, c);
-      const s = shapeFn(x, y, c);
-      const value = drawFn(h, s, c);
-      data.data.set(value, 4 * (y * c.width + x));
-    }
+  const gl = canvas.getContext("webgl");
+  if (gl === null) {
+    throw new Error(
+      "Couldn't set up WebGL - maybe unsupported by your browser."
+    );
   }
-  ctx.putImageData(data, 0, 0);
+  gl.clearColor(0.0, 0.0, 0.0, 0.0);
+
+  // Shaders
+  function compileShader(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const msg = gl.getShaderInfoLog(shader);
+      gl.deleteShader(shader);
+      throw Error(`Shader compile error: ${msg}`);
+    }
+    return shader;
+  }
+  const vertexShader = compileShader(
+    gl.VERTEX_SHADER,
+    `
+    attribute vec2 position;
+    void main() {
+      gl_Position = vec4(position, 0.0, 1.0);
+    }
+  `
+  );
+  const fragmentShader = compileShader(
+    gl.FRAGMENT_SHADER,
+    `
+    precision mediump float;
+
+    uniform int c_x, c_y, c_xy, c_xx, c_yy;
+    uniform int period;
+    uniform float threshold;
+    uniform vec4 color0, color1;
+    uniform int shape_power;
+    uniform float shape_gamma;
+
+    uniform int width, height;
+
+    void main() {
+      int x = int(gl_FragCoord.x);
+      int y = int(gl_FragCoord.y);
+      float h = float(c_x * x + c_y * y + c_xy * x*y + c_xx * x*x + c_yy * y*y);
+      vec4 color = mod(h / float(period), 1.0) < threshold ? color0 : color1;
+
+      if (shape_power != 0) {
+        float z = pow(
+          pow(abs(float(2 * x) / float(width) - 1.0), float(shape_power))
+          + pow(abs(float(2 * y) / float(height) - 1.0), float(shape_power)),
+          1.0 / float(shape_power)
+        );
+        color.a *= pow(max(1.0 - z, 0.0), shape_gamma);
+      }
+
+      gl_FragColor = color;
+    }
+  `
+  );
+  const program = gl.createProgram();
+  gl.attachShader(program, vertexShader);
+  gl.attachShader(program, fragmentShader);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    const msg = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw Error(`Program link error: ${msg}`);
+  }
+  gl.useProgram(program);
+
+  // Shape
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+    gl.STATIC_DRAW
+  );
+  const positionLocation = gl.getAttribLocation(program, "position");
+  gl.enableVertexAttribArray(positionLocation);
+  gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  // Draw
+  return (config) => {
+    // Equation
+    if (eqn !== null) {
+      eqn.innerHTML = hashFnEquation(config);
+      MathJax.typesetClear([eqn]);
+      MathJax.typeset([eqn]);
+    }
+    // Texture
+    canvas.width = config.width;
+    canvas.height = config.height;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    // const scale = Math.max(
+    //   1,
+    //   Math.floor(
+    //     Math.min(
+    //       root.offsetWidth / canvas.width,
+    //       root.offsetHeight / canvas.height
+    //     )
+    //   )
+    // );
+    for (let [k, spec] of Object.entries(CONFIG_SCHEMA)) {
+      if (spec.shader === undefined || spec.shader) {
+        let loc = gl.getUniformLocation(program, k);
+        if (spec.type === "int") {
+          gl.uniform1i(loc, config[k]);
+        } else if (spec.type === "float") {
+          gl.uniform1f(loc, config[k]);
+        } else if (spec.type === "color") {
+          const c = config[k];
+          gl.uniform4f(loc, c[0] / 255, c[1] / 255, c[2] / 255, 1.0);
+        } else {
+          throw Error(`Unsupported type ${spec.type}`);
+        }
+      }
+    }
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  };
 }
 
 // HTML
@@ -217,13 +285,14 @@ function hvInit(root) {
     root.appendChild(controls);
   }
 
-  render(root, config);
+  const render = renderer(root);
+  render(config);
 
   // Control wiring
   root.querySelectorAll(".hv-control").forEach((c) => {
     c.addEventListener("change", () => {
       config[c.name] = parseValue(c.value, CONFIG_SCHEMA[c.name]);
-      render(root, config);
+      render(config);
     });
   });
   root.querySelectorAll(".hv-reset").forEach((reset) => {
@@ -232,7 +301,7 @@ function hvInit(root) {
       root.querySelectorAll(".hv-control").forEach((c) => {
         c.value = printValue(config[c.name], CONFIG_SCHEMA[c.name]);
       });
-      render(root, config);
+      render(config);
     });
   });
   if (root.classList.contains("hv-show-controls")) {
