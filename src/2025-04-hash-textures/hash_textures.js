@@ -248,8 +248,8 @@ function renderer(root, scrollbarWidth) {
     canvas.width = scale * config.width;
     canvas.height = scale * config.height;
     gl.uniform1i(gl.getUniformLocation(program, "scale"), scale);
-    gl.uniform1i(gl.getUniformLocation(program, "width"), canvas.width);
-    gl.uniform1i(gl.getUniformLocation(program, "height"), canvas.height);
+    gl.uniform1i(gl.getUniformLocation(program, "width"), config.width);
+    gl.uniform1i(gl.getUniformLocation(program, "height"), config.height);
     for (let [k, spec] of Object.entries(CONFIG_SCHEMA)) {
       if (spec.shader === undefined || spec.shader) {
         let loc = gl.getUniformLocation(program, k);
