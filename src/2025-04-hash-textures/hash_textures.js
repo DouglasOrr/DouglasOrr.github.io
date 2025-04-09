@@ -13,8 +13,8 @@ const CONFIG_SCHEMA = {
   shape_power: { type: "int", alias: "s", min: 0 },
   shape_gamma: { type: "float", alias: "g", min: 0, step: 0.125 },
   // Canvas
-  width: { type: "int", alias: "w", min: 1 },
-  height: { type: "int", alias: "h", min: 1 },
+  width: { type: "int", alias: "w", min: 1, shader: false },
+  height: { type: "int", alias: "h", min: 1, shader: false },
   color0: { type: "color", alias: "k" },
   color1: { type: "color", alias: "j" },
   // Animation
@@ -97,7 +97,7 @@ function hashFnEquation(c) {
 }
 
 // Returns a function render(config)
-function renderer(root) {
+function renderer(root, scrollbarWidth) {
   const eqn = root.querySelector(".hv-equation");
   const canvas = root.querySelector(".hv-screen");
   const gl = canvas.getContext("webgl");
@@ -141,11 +141,11 @@ function renderer(root) {
     uniform int shape_power;
     uniform float shape_gamma;
 
-    uniform int width, height;
+    uniform int scale, width, height;
 
     void main() {
-      int x = int(gl_FragCoord.x);
-      int y = int(gl_FragCoord.y);
+      int x = int(gl_FragCoord.x) / scale;
+      int y = int(gl_FragCoord.y) / scale;
       float h = float(c_x * x + c_y * y + c_xy * x*y + c_xx * x*x + c_yy * y*y);
       vec4 color = mod(h / float(period), 1.0) < threshold ? color0 : color1;
 
@@ -193,19 +193,21 @@ function renderer(root) {
       MathJax.typesetClear([eqn]);
       MathJax.typeset([eqn]);
     }
+
+    // Implement hysteresis in the scaling, otherwise it can get into a loop
+    // of showing/hiding the scrollbars
+    const targetWidth =
+      canvas.width < root.offsetWidth - scrollbarWidth
+        ? root.offsetWidth - scrollbarWidth
+        : root.offsetWidth;
+    const scale = Math.max(1, Math.floor(targetWidth / config.width));
+
     // Texture
-    canvas.width = config.width;
-    canvas.height = config.height;
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    // const scale = Math.max(
-    //   1,
-    //   Math.floor(
-    //     Math.min(
-    //       root.offsetWidth / canvas.width,
-    //       root.offsetHeight / canvas.height
-    //     )
-    //   )
-    // );
+    canvas.width = scale * config.width;
+    canvas.height = scale * config.height;
+    gl.uniform1i(gl.getUniformLocation(program, "scale"), scale);
+    gl.uniform1i(gl.getUniformLocation(program, "width"), canvas.width);
+    gl.uniform1i(gl.getUniformLocation(program, "height"), canvas.height);
     for (let [k, spec] of Object.entries(CONFIG_SCHEMA)) {
       if (spec.shader === undefined || spec.shader) {
         let loc = gl.getUniformLocation(program, k);
@@ -221,6 +223,7 @@ function renderer(root) {
         }
       }
     }
+    gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   };
@@ -234,14 +237,8 @@ function createNode(html) {
   return template.content.firstChild;
 }
 
-function hvInit(root) {
+function hvInit(root, scrollbarWidth) {
   const config = parseConfigStr(root.dataset.hvInit);
-
-  root.appendChild(createNode(`<canvas class="hv-screen"></canvas>`));
-
-  if (root.classList.contains("hv-show-equation")) {
-    root.appendChild(createNode(`<div class="hv-equation"></div>`));
-  }
 
   if (root.classList.contains("hv-show-controls")) {
     let controls = createNode(`<div class="hv-controls">`);
@@ -285,8 +282,17 @@ function hvInit(root) {
     root.appendChild(controls);
   }
 
-  const render = renderer(root);
+  if (root.classList.contains("hv-show-equation")) {
+    root.appendChild(createNode(`<div class="hv-equation"></div>`));
+  }
+
+  root.appendChild(createNode(`<canvas class="hv-screen"></canvas>`));
+
+  const render = renderer(root, scrollbarWidth);
   render(config);
+  new ResizeObserver(() => {
+    render(config);
+  }).observe(root);
 
   // Control wiring
   root.querySelectorAll(".hv-control").forEach((c) => {
@@ -330,8 +336,25 @@ function hvInit(root) {
   }
 }
 
+// Measure the default scroll bar width in pixels, empirically
+function getScrollbarWidth() {
+  const div = document.createElement("div");
+  div.style.position = "absolute";
+  div.style.top = "-9999px";
+  div.style.width = "100px";
+  div.style.height = "100px";
+  div.style.overflow = "scroll";
+  document.body.appendChild(div);
+  try {
+    return div.offsetWidth - div.clientWidth;
+  } finally {
+    document.body.removeChild(div);
+  }
+}
+
 window.addEventListener("load", () => {
+  const scrollbarWidth = getScrollbarWidth();
   for (const root of document.querySelectorAll(".hv")) {
-    hvInit(root);
+    hvInit(root, scrollbarWidth);
   }
 });
