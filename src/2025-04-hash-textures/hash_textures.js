@@ -24,7 +24,7 @@ const CONFIG_SCHEMA = {
     default: null,
     shader: false,
   },
-  fps: { type: "float", default: 5, shader: false },
+  fps: { type: "float", alias: "r", shader: false },
 };
 
 const CONTROLS = [
@@ -47,11 +47,18 @@ function parseValue(s, spec) {
     const i = parseInt(s.replace("#", ""), 16);
     return [(i >> 16) & 0xff, (i >> 8) & 0xff, i & 0xff];
   }
+  if (spec.type == "option") {
+    return s;
+  }
+  throw Error(`Unknown spec.type ${spec.type}`);
 }
 
-function printValue(v, spec) {
+function printValue(v, spec, colorPrefix) {
   if (spec.type == "color") {
-    return "#" + v.map((x) => x.toString(16).padStart(2, "0")).join("");
+    return (
+      (colorPrefix || "") +
+      v.map((x) => x.toString(16).padStart(2, "0")).join("")
+    );
   }
   return String(v);
 }
@@ -66,11 +73,41 @@ function parseConfigStr(s) {
       result[key] = spec.default;
     }
   }
-  for (let [_, k, v] of s.matchAll(new RegExp("([g-z]+)([0-9a-f.]+)", "g"))) {
+  for (let [_, k, v] of s.matchAll(
+    new RegExp("([g-z]+)([0-9a-f.#]+|\\*)", "g")
+  )) {
     const key = aliasToKey[k];
-    result[key] = parseValue(v, CONFIG_SCHEMA[key]);
+    if (v === "*") {
+      result[key] = 0;
+      result["animate"] = key;
+    } else {
+      result[key] = parseValue(v, CONFIG_SCHEMA[key]);
+    }
   }
   return result;
+}
+
+function printConfigStr(config) {
+  let s = "";
+  for (let [key, value] of Object.entries(config)) {
+    const spec = CONFIG_SCHEMA[key];
+    if (spec.alias !== undefined) {
+      const v = key == config.animate ? "*" : printValue(value, spec);
+      s += `${spec.alias}${v}`;
+    }
+  }
+  return s;
+}
+
+function getWindowLocationHash() {
+  const h = new URL(window.location.href).searchParams.get("h");
+  return h ? decodeURIComponent(h) : null;
+}
+
+function setWindowLocationHash(config) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("h", encodeURIComponent(printConfigStr(config)));
+  window.history.replaceState(null, "", url.toString());
 }
 
 // Rendering
@@ -187,6 +224,11 @@ function renderer(root, scrollbarWidth) {
 
   // Draw
   return (config) => {
+    // URL
+    if (root.classList.contains("hv-url")) {
+      setWindowLocationHash(config);
+    }
+
     // Equation
     if (eqn !== null) {
       eqn.innerHTML = hashFnEquation(config);
@@ -229,7 +271,7 @@ function renderer(root, scrollbarWidth) {
   };
 }
 
-// HTML
+// HTML Component
 
 function createNode(html) {
   const template = document.createElement("template");
@@ -237,58 +279,63 @@ function createNode(html) {
   return template.content.firstChild;
 }
 
+function createControls(root, config) {
+  let controls = createNode(`<div class="hv-controls">`);
+  for (let [groupTitle, keys] of CONTROLS) {
+    const row = createNode("<p>");
+    row.appendChild(createNode(groupTitle));
+    for (let key of keys) {
+      const spec = CONFIG_SCHEMA[key];
+      if (spec.type === "option") {
+        const select = createNode(
+          `<select class="hv-control" title="${key}" name="${key}">`
+        );
+        for (const k2 of spec.options) {
+          select.appendChild(
+            createNode(`<option value="${k2}">${k2}</option>`)
+          );
+        }
+        select.value = printValue(config[key], spec, "#");
+        row.appendChild(select);
+      } else {
+        const input = createNode(
+          `<input class="hv-control" title="${key}" name="${key}" />`
+        );
+        input.setAttribute("value", printValue(config[key], spec, "#"));
+        input.setAttribute("type", spec.type === "color" ? "color" : "number");
+        for (let attr of ["min", "max", "step"]) {
+          if (attr in spec) {
+            input.setAttribute(attr, spec[attr]);
+          }
+        }
+        row.appendChild(input);
+      }
+    }
+    controls.appendChild(row);
+  }
+  controls.appendChild(
+    createNode(`<input class="hv-reset" type="button" value="Reset"/>`)
+  );
+  controls.appendChild(
+    createNode(`<input class="hv-download" type="button" value="Download"/>`)
+  );
+  if (root.classList.contains("hv-url") && navigator.clipboard) {
+    controls.appendChild(
+      createNode(`<input class="hv-share" type="button" value="Share"/>`)
+    );
+  }
+  return controls;
+}
+
 function hvInit(root, scrollbarWidth) {
-  const config = parseConfigStr(root.dataset.hvInit);
+  const config = parseConfigStr(getWindowLocationHash() ?? root.dataset.hvInit);
 
   if (root.classList.contains("hv-show-controls")) {
-    let controls = createNode(`<div class="hv-controls">`);
-    for (let [groupTitle, keys] of CONTROLS) {
-      const row = createNode("<p>");
-      row.appendChild(createNode(groupTitle));
-      for (let key of keys) {
-        const spec = CONFIG_SCHEMA[key];
-        if (spec.type === "option") {
-          const select = createNode(
-            `<select class="hv-control" title="${key}" name="${key}">`
-          );
-          for (const k2 of spec.options) {
-            select.appendChild(
-              createNode(`<option value="${k2}">${k2}</option>`)
-            );
-          }
-          row.appendChild(select);
-        } else {
-          const input = createNode(
-            `<input class="hv-control" title="${key}" name="${key}" />`
-          );
-          input.setAttribute("value", printValue(config[key], spec));
-          input.setAttribute(
-            "type",
-            spec.type === "color" ? "color" : "number"
-          );
-          for (let attr of ["min", "max", "step"]) {
-            if (attr in spec) {
-              input.setAttribute(attr, spec[attr]);
-            }
-          }
-          row.appendChild(input);
-        }
-      }
-      controls.appendChild(row);
-    }
-    controls.appendChild(
-      createNode(`<input class="hv-reset" type="button" value="Reset"/>`)
-    );
-    controls.appendChild(
-      createNode(`<input class="hv-download" type="button" value="Download"/>`)
-    );
-    root.appendChild(controls);
+    root.appendChild(createControls(root, config));
   }
-
   if (root.classList.contains("hv-show-equation")) {
     root.appendChild(createNode(`<div class="hv-equation"></div>`));
   }
-
   root.appendChild(createNode(`<canvas class="hv-screen"></canvas>`));
 
   const render = renderer(root, scrollbarWidth);
@@ -308,7 +355,7 @@ function hvInit(root, scrollbarWidth) {
     reset.addEventListener("click", () => {
       Object.assign(config, parseConfigStr(root.dataset.hvInit));
       root.querySelectorAll(".hv-control").forEach((c) => {
-        c.value = printValue(config[c.name], CONFIG_SCHEMA[c.name]);
+        c.value = printValue(config[c.name], CONFIG_SCHEMA[c.name], "#");
       });
       render(config);
     });
@@ -320,6 +367,18 @@ function hvInit(root, scrollbarWidth) {
       a.download = "hash_texture.png";
       a.href = document.querySelector(".hv-screen").toDataURL("image/png");
       a.click();
+    });
+  });
+  root.querySelectorAll(".hv-share").forEach((share) => {
+    share.addEventListener("click", () => {
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => {
+          alert("URL copied to clipboard");
+        })
+        .catch((err) => {
+          console.error("Failed to copy URL: ", err);
+        });
     });
   });
   if (root.classList.contains("hv-show-controls")) {
@@ -347,6 +406,8 @@ function hvInit(root, scrollbarWidth) {
     requestAnimationFrame(onFrame);
   }
 }
+
+// HTML Top-level
 
 // Measure the default scroll bar width in pixels, empirically
 function getScrollbarWidth() {
