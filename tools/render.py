@@ -170,7 +170,7 @@ class Builder:
         (
             "js/lib.js",
             [
-                "https://cdn.jsdelivr.net/npm/mathjax@3.0.0/es5/tex-svg.js",
+                "https://cdn.jsdelivr.net/npm/mathjax@3.2/es5/tex-svg.js",
                 "https://cdn.jsdelivr.net/npm/prismjs@1.21.0/prism.js",
             ]
             + [

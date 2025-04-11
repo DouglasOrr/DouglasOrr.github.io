@@ -2,46 +2,81 @@
 
 const CONFIG_SCHEMA = {
   // Hash
-  c_x: { type: "int", alias: "x" },
-  c_y: { type: "int", alias: "y" },
-  c_xy: { type: "int", alias: "xy" },
-  c_xx: { type: "int", alias: "xx" },
-  c_yy: { type: "int", alias: "yy" },
-  period: { type: "int", alias: "p", min: 1 },
-  threshold: { type: "float", alias: "t", min: 0, max: 1, step: 0.1 },
-  // Shape
-  shape_power: { type: "int", alias: "s", min: 0 },
-  shape_gamma: { type: "float", alias: "g", min: 0, step: 0.125 },
-  // Canvas
-  width: { type: "int", alias: "w", min: 1, shader: false },
-  height: { type: "int", alias: "h", min: 1, shader: false },
-  color0: { type: "color", alias: "k" },
-  color1: { type: "color", alias: "j" },
-  // Animation
-  animate: {
-    type: "option",
-    options: [null, "c_x", "c_y", "c_xy", "c_xx", "c_yy", "threshold"],
-    default: null,
+  c_x: { type: "int", alias: "x", label: `\\(c_{x}\\)`, min: 0, max: "period" },
+  c_y: { type: "int", alias: "y", label: `\\(c_{y}\\)`, min: 0, max: "period" },
+  c_xy: {
+    type: "int",
+    alias: "xy",
+    label: `\\(c_{xy}\\)`,
+    min: 0,
+    max: "period",
+  },
+  c_xx: {
+    type: "int",
+    alias: "xx",
+    label: `\\(c_{x^2}\\)`,
+    min: 0,
+    max: "period",
+  },
+  c_yy: {
+    type: "int",
+    alias: "yy",
+    label: `\\(c_{y^2}\\)`,
+    min: 0,
+    max: "period",
+  },
+  period: { type: "int", alias: "p", label: "mod", min: 0, step: 16 },
+  threshold: {
+    type: "float",
+    alias: "t",
+    label: `\\(\\tau\\)`,
+    min: 0,
+    max: 1,
+    step: 0.1,
+    animateStep: 0.05,
+  },
+  // Canvas & shape
+  width: {
+    type: "int",
+    alias: "w",
+    label: `w`,
+    min: 0,
+    step: 32,
     shader: false,
   },
-  fps: { type: "float", alias: "r", shader: false },
+  height: {
+    type: "int",
+    alias: "h",
+    label: `h`,
+    min: 0,
+    step: 32,
+    shader: false,
+  },
+  shape_power: { type: "int", alias: "s", label: `\\(\\rho_s\\)`, min: 0 },
+  shape_gamma: {
+    type: "float",
+    alias: "g",
+    label: `\\(\\gamma_s\\)`,
+    min: 0,
+    step: 0.125,
+  },
+  color0: { type: "color", label: `color 0`, alias: "k" },
+  color1: { type: "color", label: `color 1`, alias: "j" },
+  // Animation
+  animate: { type: "option", default: null, shader: false },
+  fps: { type: "float", alias: "r", min: 1, max: 30, shader: false },
 };
-
-const CONTROLS = [
-  ["Hash", ["c_x", "c_y", "c_xy", "c_xx", "c_yy", "period", "threshold"]],
-  [
-    "Draw",
-    ["shape_power", "shape_gamma", "width", "height", "color0", "color1"],
-  ],
-  ["Animate", ["animate", "fps"]],
-];
 
 // Parsing
 
 function parseValue(s, spec) {
   if (spec.type === "int" || spec.type === "float") {
     const v = spec.type === "int" ? Number.parseInt(s) : Number.parseFloat(s);
-    return Math.min(Math.max(v, spec.min ?? -Infinity), spec.max ?? Infinity);
+    // Can't apply {max: "period"} here, as period may not be parsed yet
+    return Math.min(
+      Math.max(v, spec.min ?? -Infinity),
+      spec.max === undefined || spec.max === "period" ? Infinity : spec.max
+    );
   }
   if (spec.type === "color") {
     const i = parseInt(s.replace("#", ""), 16);
@@ -54,11 +89,14 @@ function parseValue(s, spec) {
 }
 
 function printValue(v, spec, colorPrefix) {
-  if (spec.type == "color") {
+  if (spec.type === "color") {
     return (
       (colorPrefix || "") +
       v.map((x) => x.toString(16).padStart(2, "0")).join("")
     );
+  }
+  if (spec.type === "float") {
+    return v.toFixed(3);
   }
   return String(v);
 }
@@ -127,6 +165,9 @@ function hashFnEquation(c) {
       parts.push(`${n} ${v}`);
     }
   }
+  if (parts.length === 0) {
+    parts.push(`0`);
+  }
   return (
     `$$ (${parts.join(" + ")}) \\,\\mathrm{mod}\\, ${c.period}` +
     ` <  ${c.threshold.toFixed(2)} \\cdot ${c.period} $$`
@@ -137,6 +178,10 @@ function hashFnEquation(c) {
 function renderer(root, scrollbarWidth) {
   const eqn = root.querySelector(".hv-equation");
   const canvas = root.querySelector(".hv-screen");
+  const controlLabels = {};
+  root.querySelectorAll(".hv-control").forEach((c) => {
+    controlLabels[c.dataset.key] = c.querySelector(".hv-value");
+  });
   const gl = canvas.getContext("webgl");
   if (gl === null) {
     throw new Error(
@@ -192,7 +237,8 @@ function renderer(root, scrollbarWidth) {
           + pow(abs(float(2 * y) / float(height) - 1.0), float(shape_power)),
           1.0 / float(shape_power)
         );
-        color.a *= pow(max(1.0 - z, 0.0), shape_gamma);
+        float a = max(1.0 - z, 0.0);
+        color.a *= shape_gamma == 0.0 ? float(a > 0.0) : pow(a, shape_gamma);
       }
 
       gl_FragColor = color;
@@ -232,8 +278,13 @@ function renderer(root, scrollbarWidth) {
     // Equation
     if (eqn !== null) {
       eqn.innerHTML = hashFnEquation(config);
-      MathJax.typesetClear([eqn]);
+      // MathJax.typesetClear([eqn]);
       MathJax.typeset([eqn]);
+    }
+
+    // Control labels
+    for (let [key, e] of Object.entries(controlLabels)) {
+      e.innerText = printValue(config[key], CONFIG_SCHEMA[key], "#");
     }
 
     // Implement hysteresis in the scaling, otherwise it can get into a loop
@@ -280,51 +331,88 @@ function createNode(html) {
 }
 
 function createControls(root, config) {
-  let controls = createNode(`<div class="hv-controls">`);
-  for (let [groupTitle, keys] of CONTROLS) {
-    const row = createNode("<p>");
-    row.appendChild(createNode(groupTitle));
-    for (let key of keys) {
-      const spec = CONFIG_SCHEMA[key];
-      if (spec.type === "option") {
-        const select = createNode(
-          `<select class="hv-control" title="${key}" name="${key}">`
-        );
-        for (const k2 of spec.options) {
-          select.appendChild(
-            createNode(`<option value="${k2}">${k2}</option>`)
-          );
-        }
-        select.value = printValue(config[key], spec, "#");
-        row.appendChild(select);
-      } else {
+  const controls = createNode(`<div class="hv-controls">`);
+
+  // Top row controls, colors, buttons
+  const topRow = createNode(`<div>`);
+  for (let [key, spec] of Object.entries(CONFIG_SCHEMA)) {
+    if (spec.label) {
+      if (spec.type === "color") {
         const input = createNode(
-          `<input class="hv-control" title="${key}" name="${key}" />`
+          `<input class="hv-color" type="color" title="${spec.label}"/>`
         );
-        input.setAttribute("value", printValue(config[key], spec, "#"));
-        input.setAttribute("type", spec.type === "color" ? "color" : "number");
-        for (let attr of ["min", "max", "step"]) {
-          if (attr in spec) {
-            input.setAttribute(attr, spec[attr]);
-          }
-        }
-        row.appendChild(input);
+        input.value = printValue(config[key], spec, "#");
+        input.dataset.key = key;
+        topRow.appendChild(input);
+      } else {
+        const control = createNode(`<div class="hv-control" tabindex="0">`);
+        control.appendChild(
+          createNode(`<div class="hv-label">${spec.label}</div>`)
+        );
+        control.appendChild(
+          createNode(`<div class="hv-value">${config[key]}</div>`)
+        );
+        control.dataset.key = key;
+        topRow.appendChild(control);
       }
     }
-    controls.appendChild(row);
   }
-  controls.appendChild(
-    createNode(`<input class="hv-reset" type="button" value="Reset"/>`)
+  topRow.appendChild(
+    createNode(`<div class="hv-reset hv-button">\u21ba</div>`)
   );
-  controls.appendChild(
-    createNode(`<input class="hv-download" type="button" value="Download"/>`)
+  topRow.appendChild(
+    createNode(`<div class="hv-download hv-button">\u2913</div>`)
   );
   if (root.classList.contains("hv-url") && navigator.clipboard) {
-    controls.appendChild(
-      createNode(`<input class="hv-share" type="button" value="Share"/>`)
+    topRow.appendChild(
+      createNode(`<div class="hv-share hv-button">\u{1F4CB}</div>`)
     );
   }
+  controls.appendChild(topRow);
+
+  // Common (shared) controls
+  const common = createNode(`<div class="hv-controls-common">`);
+  common.style.display = "none";
+  common.appendChild(
+    createNode(`<div class="hv-animate hv-button">\u25B6</div>`)
+  );
+  common.appendChild(
+    createNode(`<span class="hv-animate-fps-label">&nbsp;fps&nbsp;</span>`)
+  );
+  common.appendChild(
+    createNode(`<div class="hv-slider-dec hv-button">\u2212</div>`)
+  );
+  common.appendChild(createNode(`<input class="hv-slider" type="range"/>`));
+  common.appendChild(
+    createNode(`<div class="hv-slider-inc hv-button">+</div>`)
+  );
+  controls.appendChild(common);
+
   return controls;
+}
+
+function configureCommon(root, config, key) {
+  const slider = root.querySelector(".hv-slider");
+  const animate = root.querySelector(".hv-animate");
+  const animateFpsLabel = root.querySelector(".hv-animate-fps-label");
+  const isAnimating = config.animate === key;
+
+  const skey = isAnimating ? "fps" : key;
+  const sspec = CONFIG_SCHEMA[skey];
+  slider.type =
+    sspec.min !== undefined && sspec.max != undefined ? "range" : "number";
+  slider.min = sspec.min;
+  slider.max = typeof sspec.max === "string" ? config[sspec.max] : sspec.max;
+  slider.step = sspec.step ?? 1;
+  slider.value = config[skey];
+  slider.dataset.key = skey;
+
+  const spec = CONFIG_SCHEMA[key];
+  animate.style.display =
+    spec.min !== undefined && spec.max != undefined ? "inline-block" : "none";
+  animate.dataset.key = key;
+  animate.innerText = isAnimating ? `\u25A0` : `\u25B6`; // u23F9
+  animateFpsLabel.style.display = isAnimating ? "inline-block" : "none";
 }
 
 function hvInit(root, scrollbarWidth) {
@@ -332,6 +420,7 @@ function hvInit(root, scrollbarWidth) {
 
   if (root.classList.contains("hv-show-controls")) {
     root.appendChild(createControls(root, config));
+    MathJax.typesetPromise();
   }
   if (root.classList.contains("hv-show-equation")) {
     root.appendChild(createNode(`<div class="hv-equation"></div>`));
@@ -344,19 +433,60 @@ function hvInit(root, scrollbarWidth) {
     render(config);
   }).observe(root);
 
-  // Control wiring
-  root.querySelectorAll(".hv-control").forEach((c) => {
+  // Shared controls
+  root.querySelectorAll(".hv-slider").forEach((c) => {
     c.addEventListener("change", () => {
-      config[c.name] = parseValue(c.value, CONFIG_SCHEMA[c.name]);
+      config[c.dataset.key] = parseValue(c.value, CONFIG_SCHEMA[c.dataset.key]);
       render(config);
     });
   });
-  root.querySelectorAll(".hv-reset").forEach((reset) => {
-    reset.addEventListener("click", () => {
-      Object.assign(config, parseConfigStr(root.dataset.hvInit));
-      root.querySelectorAll(".hv-control").forEach((c) => {
-        c.value = printValue(config[c.name], CONFIG_SCHEMA[c.name], "#");
+  root.querySelectorAll(".hv-control").forEach((c) => {
+    c.addEventListener("click", (e) => {
+      // Select/deselect this config parameter
+      const toggleOn = c.dataset.selected !== "true";
+      root.querySelectorAll(".hv-control").forEach((other) => {
+        other.dataset.selected = false;
       });
+      c.dataset.selected = toggleOn;
+
+      // Configure the common controls panel
+      const common = root.querySelector(".hv-controls-common");
+      common.style.display = toggleOn ? "inline-block" : "none";
+      if (toggleOn) {
+        configureCommon(root, config, c.dataset.key);
+      }
+      e.stopPropagation();
+    });
+  });
+
+  // Buttons
+  root.querySelectorAll(".hv-slider-inc,.hv-slider-dec").forEach((c) => {
+    c.addEventListener("click", () => {
+      root.querySelectorAll(".hv-slider").forEach((slider) => {
+        const delta =
+          slider.step * (2 * +c.classList.contains("hv-slider-inc") - 1);
+        slider.value = Math.min(
+          Math.max(
+            parseFloat(slider.value) + delta,
+            slider.min === "undefined" ? -Infinity : parseFloat(slider.min)
+          ),
+          slider.max === "undefined" ? Infinity : parseFloat(slider.max)
+        );
+        slider.dispatchEvent(new Event("change"));
+      });
+    });
+  });
+  root.querySelectorAll(".hv-animate").forEach((c) => {
+    c.addEventListener("click", () => {
+      const slider = root.querySelector(".hv-slider");
+      config["animate"] =
+        config["animate"] !== c.dataset.key ? c.dataset.key : null;
+      configureCommon(root, config, c.dataset.key);
+    });
+  });
+  root.querySelectorAll(".hv-color").forEach((c) => {
+    c.addEventListener("change", () => {
+      config[c.dataset.key] = parseValue(c.value, CONFIG_SCHEMA[c.dataset.key]);
       render(config);
     });
   });
@@ -381,30 +511,44 @@ function hvInit(root, scrollbarWidth) {
         });
     });
   });
-  if (root.classList.contains("hv-show-controls")) {
-    let lastUpdate = null;
-    const animate = root.querySelector(`.hv-control[name="animate"]`);
-    const fps = root.querySelector(`.hv-control[name="fps"]`);
-    function onFrame(time) {
-      if (animate.value !== "null") {
-        if (lastUpdate === null || time - lastUpdate >= 1000 / fps.value) {
-          const input = root.querySelector(
-            `.hv-control[name="${animate.value}"]`
-          );
-          if (animate.value === "threshold") {
-            input.value = (Number(input.value) + 0.05) % 1;
-          } else {
-            const period = root.querySelector(`.hv-control[name="period"]`);
-            input.value = (Number(input.value) + 1) % Number(period.value);
-          }
-          input.dispatchEvent(new Event("change"));
-          lastUpdate = time;
-        }
-      }
-      requestAnimationFrame(onFrame);
+  root.querySelectorAll(".hv-reset").forEach((reset) => {
+    reset.addEventListener("click", () => {
+      Object.assign(config, parseConfigStr(root.dataset.hvInit));
+      root.querySelectorAll(".hv-color").forEach((color) => {
+        color.value = printValue(
+          config[color.dataset.key],
+          CONFIG_SCHEMA[color.dataset.key],
+          "#"
+        );
+      });
+      root.querySelectorAll(".hv-control").forEach((c) => {
+        c.dataset.selected = false;
+      });
+      root.querySelector(".hv-controls-common").style.display = "none";
+      render(config);
+    });
+  });
+
+  // Animation loop
+  let lastUpdate = null;
+  function onFrame(time) {
+    if (
+      config.animate &&
+      (lastUpdate === null || time - lastUpdate >= 1000 / config.fps)
+    ) {
+      const spec = CONFIG_SCHEMA[config.animate];
+      const specMax =
+        typeof spec.max === "string" ? config[spec.max] : spec.max;
+      let value = config[config.animate];
+      value += spec.animateStep ?? 1;
+      value = spec.min + ((value - spec.min) % (specMax - spec.min));
+      config[config.animate] = value;
+      render(config);
+      lastUpdate = time;
     }
     requestAnimationFrame(onFrame);
   }
+  requestAnimationFrame(onFrame);
 }
 
 // HTML Top-level
