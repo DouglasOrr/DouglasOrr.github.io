@@ -214,7 +214,8 @@ function renderer(root, scrollbarWidth) {
   const fragmentShader = compileShader(
     gl.FRAGMENT_SHADER,
     `
-    precision mediump float;
+    precision highp float;
+    precision highp int;
 
     uniform int c_x, c_y, c_xy, c_xx, c_yy;
     uniform int period;
@@ -228,8 +229,10 @@ function renderer(root, scrollbarWidth) {
     void main() {
       int x = int(gl_FragCoord.x) / scale;
       int y = int(gl_FragCoord.y) / scale;
-      float h = float(c_x * x + c_y * y + c_xy * x*y + c_xx * x*x + c_yy * y*y);
-      vec4 color = mod(h / float(period), 1.0) < threshold ? color0 : color1;
+
+      int h = c_x * x + c_y * y + c_xy * x*y + c_xx * x*x + c_yy * y*y;
+      h -= period * (h / period);
+      vec4 color = float(h) < threshold * float(period) ? color0 : color1;
 
       if (shape_power != 0) {
         float z = pow(
@@ -240,7 +243,6 @@ function renderer(root, scrollbarWidth) {
         float a = max(1.0 - z, 0.0);
         color.a *= shape_gamma == 0.0 ? float(a > 0.0) : pow(a, shape_gamma);
       }
-
       gl_FragColor = color;
     }
   `
