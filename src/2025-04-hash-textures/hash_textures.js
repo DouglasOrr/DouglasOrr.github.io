@@ -71,7 +71,7 @@ const CONFIG_SCHEMA = {
   color1: { type: "color", label: `color 1`, alias: "j" },
   // Animation
   animate: { type: "option", default: null, shader: false },
-  fps: { type: "float", alias: "r", min: 1, max: 30, shader: false },
+  fps: { type: "float", alias: "r", min: 0, max: 30, shader: false },
 };
 
 // Parsing
