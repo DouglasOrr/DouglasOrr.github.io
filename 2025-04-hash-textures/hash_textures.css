@@ -1,0 +1,97 @@
+.hv {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+.hv-equation {
+  font-size: normal;
+}
+.hv-title {
+  display: inline-block;
+  margin-bottom: 0.6em;
+  padding: 0.3em;
+  background-color: #555;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+a.hv-title {
+  background-color: #999;
+}
+a.hv-title:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Controls */
+.hv-control {
+  display: inline-block;
+  height: 1.4em;
+  padding: 0.1em 0.3em 0.2em 0.3em;
+  margin: 0.1em;
+  vertical-align: middle;
+  background-color: #d8d8d8;
+  border: 2px solid transparent;
+  cursor: default;
+  user-select: none;
+}
+.hv-control[data-selected="true"] {
+  border: 2px dashed #000;
+}
+.hv-button {
+  display: inline-block;
+  height: 1.4em;
+  padding: 0.3em;
+  margin: 0.1em;
+  line-height: 1.4em;
+  width: 1.4em;
+  text-align: center;
+  vertical-align: middle;
+  background-color: #d8d8d8;
+  cursor: default;
+  user-select: none;
+}
+.hv-button:hover {
+  background-color: #ccc;
+}
+.hv-button:active {
+  background-color: #888;
+}
+.hv-color {
+  height: 2.3em;
+  width: 2.3em;
+  margin: 0.1em;
+  vertical-align: middle;
+  background-color: #d8d8d8;
+  border: none;
+  box-sizing: content-box;
+}
+.hv-label {
+  display: inline;
+  vertical-align: super;
+  color: #555;
+  font-size: small;
+}
+.hv-value {
+  display: inline;
+  margin-left: 0.2em;
+}
+/* Common (shared) controls */
+.hv-controls-common {
+  margin-top: 0.5em;
+  border: 1px dashed #000;
+  padding: 0.5em;
+  width: fit-content;
+}
+.hv-slider[type="range"] {
+  vertical-align: middle;
+  width: 16em;
+}
+.hv-slider[type="number"] {
+  vertical-align: middle;
+  width: 6em;
+}
+.hv-animate {
+  margin-right: 0.5em;
+}

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <meta name="author" content="Douglas Orr" />
+    <meta name="keywords" content="graphics,maths,hash-functions" />
+    <link rel="stylesheet" href="/css/lib.css" />
+    <link rel="stylesheet" href="/css/custom.css" />
+    <script type="text/javascript" src="/js/custom.js" defer></script>
+    <script type="text/javascript" src="/js/lib.js" defer></script>
+    <title>Procedural Textures with Hash Functions</title>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">Doug's Diversions</a>
+    </nav>
+    <div class="container dd-root">
+      <div class="row">
+        <div class="col"><script src="./hash_textures.js"></script>
+<p><link rel="stylesheet" href="./hash_textures.css"></p>
+<style>
+.hv-equation {
+  font-size: small;
+}
+.hv {
+  max-width: 25em;
+  margin-top: -0.5em;
+  margin-bottom: 1.2em;
+  padding-bottom: 0.8em;
+}
+.hv-large {
+  max-width: 100%;
+}
+.favourites {
+    display: inline-block;
+    width: 100%;
+}
+.favourites > div {
+    display: inline-block;
+}
+.favourites .hv {
+    width: 20em;
+}
+.favourites .hv-equation {
+  font-size: 0.65em;
+}
+</style>
+
+<h1 id="procedural-textures-with-hash-functions">Procedural Textures with Hash Functions</h1>
+<p>and <a class="hv-title" href="./hv.html">Hash Playground</a></p>
+<p>I'm the sort of person who gets very excited when simple rules create complex behaviour. The other day, I needed a simple hash function that maps $(x, y)$ coordinates to a colour, and found a straightforward equation that ended up being astoundingly rich. Hence this post; to talk about and play with this function.</p>
+<p><strong>TL;DR: The boolean predicate $(c_x \, x + c_y \, y + c_{xy} \, x \, y + c_{x^2} \, x^2 + c_{y^2} \, y^2)$ $\mathrm{mod} \, m &lt; \tau \, m$, is richly varied and beautiful.</strong></p>
+<p>For example, varying $c_{xy}$ with the other parameters fixed:</p>
+<div class="hv hv-show-equation hv-large"
+  data-hv-init="x1 y1 xy* xx1 yy1 p64 t0.5 h256w256 k000000 j0ed3e1 r0.5"
+></div>
+
+<p>For the rest of this post, we'll try to unpick the function. If you'd prefer to play with it yourself, check out the <a href="hv.html">hash playground</a>.</p>
+<h2 id="the-idea">The idea</h2>
+<p>I was trying to make a game that obeyed a 2-bit colour palette. With a strict interpretation of the rules, this means no interpolation or antialiasing — the pixels onscreen should only be one of 4 colours. So I needed textures that could align perfectly to the screen. The not-at-all novel solution:</p>
+<p><em>Hash the (x, y) screen-space pixel coordinate, and use it to choose a colour.</em></p>
+<p>It turns out that this works fine, as long as the camera and viewports are fixed, and this very simple hash function is remarkably varied and interesting:</p>
+<p>$$(c_x \, x + c_y \, y + c_{xy} \, x \, y + c_{x^2} \, x^2 + c_{y^2} \, y^2) \,\mathrm{mod} \, m &lt; \tau \, m$$</p>
+<p>In Python, for example:</p>
+<pre><code class="language-python">c_x, c_y, c_xy, c_xx, c_yy = 1, 1, 0, 1, 1
+m, t, w, h = 64, 0.5, 128, 128
+
+x = np.arange(w)[:, None]
+y = np.arange(h)[None, :]
+
+h = (c_x*x + c_y*y + c_xy*x*y + c_xx*x**2 + c_yy*y**2) % m &lt; t*m
+
+display(PIL.Image.fromarray(h))</code></pre>
+<h2 id="a-little-understanding">A little understanding</h2>
+<p>Let's try to build up the maths to understand some of the structure behind these patterns. We'll call the expression between $()$ the body. Note that everything in this section uses a canvas width of $128$, divisor $m\!=\!64$ and threshold $\tau\!=\!0.5$.</p>
+<p><strong>What if our body is just $(x)$?</strong> The hash won't depend on $y$ and should be $\mathrm{true}$ for $x \!&lt;\! 32$ and $\mathrm{false}$ for $32 \!\leq\! x \!&lt;\! 64$. It should repeat twice over our canvas width of $128$:</p>
+<div class="hv hv-show-equation"
+  data-hv-init="x1 y0 xy0 xx0 yy0 p64 t0.5 h8w128 k000000 j0ed3e1"
+></div>
+
+<p><strong>How about $(x^2)$?</strong> I expected to see a twice-repeating pattern again, but I was wrong — we get $4$ copies:</p>
+<div class="hv hv-show-equation"
+  data-hv-init="x0 y0 xy0 xx1 yy0 p64 t0.5 h8w128 k000000 j0ed3e1"
+></div>
+
+<p>I.e. the pattern seems to repeat after $m/2$ not $m$. Let's see what happens if we add $m/2$ to $x$:</p>
+<p>$$
+\begin{align}
+&amp;(x + m/2)^2 \,\mathrm{mod}\, m  \\
+&amp;= (x^2 + m\,x + m^2/4) \,\mathrm{mod}\, m \\
+&amp;= x^2 \,\mathrm{mod}\, m \;\;(\textrm{if } m \textrm{ is a multiple of } 4) \\
+\end{align}
+$$</p>
+<p>Since the $+\, m/2$ disappears, the pattern must repeat every $m/2$ pixels rather than $m$.</p>
+<p>To understand the pattern itself, it's like an extreme aliasing effect. Scanning left to right, first you follow a quadratic: black then blue. Then you skip over the $m$ boundary, and you have the same thing again but faster. And again even faster. Eventually, you're skipping so fast that after every other pixel you're skipping to the next multiple of $m$. Like watching a video of helicopter blades as they spin up, the pattern starts to run backwards. The frequency slows again until the next long black patch when you're skipping $\approx m$ every pixel. Then the pattern repeats.</p>
+<p><strong>Going 2D, $(x^2 + y^2)$.</strong> To get genuinely interesting patterns, we need to use $x$ and $y$. Since the equation of a circle is $x^2 + y^2 = \textit{const}$, circles are <em>iso-hash</em> lines which are clearly visible. Since the expression is built using $x^2$ and $y^2$, we get $2$ copies per $m$ in each axis, so $(2 \cdot 128/64)^2 = 16$ sets of circles in total.</p>
+<div class="hv hv-show-equation"
+  data-hv-init="x0 y0 xy0 xx1 yy1 p64 t0.5 h128w128 k000000 j0ed3e1"
+></div>
+
+<p><strong>Increasing the frequency, $(2 x^2 + 2 y^2)$.</strong> Unsurprisingly, doubling $c_{x^2}$ and $c_{y^2}$ doubles the frequency of the pattern, equivalent to halving $m$ from $64$ to $32$.</p>
+<div class="hv hv-show-equation"
+  data-hv-init="x0 y0 xy0 xx2 yy2 p64 t0.5 h128w128 k000000 j0ed3e1"
+></div>
+
+<p><strong>Cross terms, $(x\,y)$.</strong> Some of my favourite patterns come from fiddling with $c_{xy}$. Even the simple body $x\,y$ is interesting. I don't have much of an explanation, except that the iso-hash is $x\,y = \textit{const}$, producing a family of reciprocal curves $y\propto1/x$, which seems to match the black and blue lines that form a pleasing spiral.</p>
+<div class="hv hv-show-equation"
+  data-hv-init="x0 y0 xy1 xx0 yy0 p64 t0.5 h128w128 k000000 j0ed3e1"
+></div>
+
+<p>That's all I've got for understanding; I'm sure there's much more that could be said from the maths of modular arithmetic, which is mostly beyond me.</p>
+<h2 id="some-favourites">Some favourites</h2>
+<p>Here are some personal favourites after some idle tinkering. Note the similarity in the first two equations, which produce very different patterns.</p>
+<div class="favourites">
+<div><div class="hv hv-show-equation"
+data-hv-init="x3 y3 xy32 xx6 yy6 p32 t0.5 h128w128 kffffff jff0000"
+></div></div>
+<div><div class="hv hv-show-equation"
+data-hv-init="x3 y3 xy32 xx7 yy7 p32 t0.5 h128w128 kffffff j007529"
+></div></div>
+
+<div><div class="hv hv-show-equation"
+data-hv-init="x0 y0 xy3 xx1 yy1 p32 t0.5 h128w128 ke8f359 jff1a3c"
+></div></div>
+<div><div class="hv hv-show-equation"
+data-hv-init="x3 y3 xy17 xx2 yy2 p64 t0.8 h128w128 kffffff jff751a"
+></div></div>
+</div>
+
+<p>It's particularly fun to sweep the threshold $\tau$, which can be useful for effects like explosions.</p>
+<div class="hv hv-show-equation hv-large"
+  data-hv-init="x0 y0 xy31 xx7 yy7 p64 t* h192w192 kffffff j000000 r10"
+></div>
+
+<h2 id="wrap-up">Wrap up</h2>
+<p>I hope you enjoyed staring at the complexities of a simple function for a few minutes! If you haven't already, try the <a href="hv.html">hash playground</a>. Maybe you can generate a new texture for your game or print a case for a mobile phone (my next step).</p>
+<p>See if you can spot some of these hash textures in the clip from my game-jam game below. And if you consider yourself part of the extremely limited target audience (who want to learn an assembly-like language just to play a short web game), perhaps check it out: <a href="https://douglasorr.itch.io/c-crits">C-crits</a>.</p>
+<p>Happy Hashing!</p>
+<hr />
+<p><a href="https://douglasorr.itch.io/c-crits" target="_blank">
+<img src="img/c-crits.gif" alt="C-crits in-game footage, with hash effects" style="max-width: 100%" />
+</a></p></div>
+      </div>
+      <div class="row dd-footer">
+        <div class="col">
+          <p>
+            Note: All views or opinions expressed here are those of the author
+            at time of writing and do not represent those of any employer or
+            other organisation, past or present.
+          </p>
+          <p>
+            Please let me know of errors or missing references by
+            <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/issues"
+              >raising an issue on GitHub</a
+            >.
+          </p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
