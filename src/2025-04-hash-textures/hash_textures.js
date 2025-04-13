@@ -182,10 +182,11 @@ function hashFnEquation(c) {
 }
 
 // Returns a function render(config)
-function renderer(root, scrollbarWidth) {
+function renderer(root, scrollbarWidth, offscreenCanvas) {
   const eqn = root.querySelector(".hv-equation");
   const eqnCache = {};
-  const canvas = root.querySelector(".hv-screen");
+  const screenCanvas = root.querySelector(".hv-screen");
+  const canvas = offscreenCanvas ?? screenCanvas;
   const controlLabels = {};
   root.querySelectorAll(".hv-control").forEach((c) => {
     controlLabels[c.dataset.key] = c.querySelector(".hv-value");
@@ -310,7 +311,7 @@ function renderer(root, scrollbarWidth) {
     // Implement hysteresis in the scaling, otherwise it can get into a loop
     // of showing/hiding the scrollbars
     const targetWidth =
-      canvas.width < root.offsetWidth - scrollbarWidth
+      screenCanvas.width < root.offsetWidth - scrollbarWidth
         ? root.offsetWidth - scrollbarWidth
         : root.offsetWidth;
     const scale = Math.max(1, Math.floor(targetWidth / config.width));
@@ -435,7 +436,7 @@ function configureCommon(root, config, key) {
   animateFpsLabel.style.display = isAnimating ? "inline-block" : "none";
 }
 
-function hvInit(root, scrollbarWidth) {
+function hvInit(root, scrollbarWidth, offscreenCanvas) {
   const config = parseConfigStr(getWindowLocationHash() ?? root.dataset.hvInit);
 
   if (root.classList.contains("hv-show-controls")) {
@@ -447,8 +448,26 @@ function hvInit(root, scrollbarWidth) {
   }
   root.appendChild(createNode(`<canvas class="hv-screen"></canvas>`));
 
+  // There is a limit to the number of WebGL contexts, so for the sake of our post with
+  // lots of hv elements, we synchronously render static images to an OffscreenCanvas,
+  // then copy it across to the hv-screen.
+  if (!root.classList.contains("hv-show-controls") && config.animate === null) {
+    const render = renderer(root, scrollbarWidth, offscreenCanvas);
+    render(config);
+
+    const screen = root.querySelector(".hv-screen");
+    screen.width = offscreenCanvas.width;
+    screen.height = offscreenCanvas.height;
+    const bitmap = offscreenCanvas.transferToImageBitmap();
+    screen.getContext("2d").drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    return; // note: cannot resize
+  }
+
   const render = renderer(root, scrollbarWidth);
   render(config);
+
   new ResizeObserver(() => {
     render(config);
   }).observe(root);
@@ -591,7 +610,8 @@ function getScrollbarWidth() {
 
 window.addEventListener("load", () => {
   const scrollbarWidth = getScrollbarWidth();
+  const offscreenCanvas = new OffscreenCanvas(0, 0);
   for (const root of document.querySelectorAll(".hv")) {
-    hvInit(root, scrollbarWidth);
+    hvInit(root, scrollbarWidth, offscreenCanvas);
   }
 });
