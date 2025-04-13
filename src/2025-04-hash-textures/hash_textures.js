@@ -2,26 +2,26 @@
 
 const CONFIG_SCHEMA = {
   // Hash
-  c_x: { type: "int", alias: "x", label: `\\(c_{x}\\)`, min: 0, max: "period" },
-  c_y: { type: "int", alias: "y", label: `\\(c_{y}\\)`, min: 0, max: "period" },
+  c_x: { type: "int", alias: "x", label: `$c_{x}$`, min: 0, max: "period" },
+  c_y: { type: "int", alias: "y", label: `$c_{y}$`, min: 0, max: "period" },
   c_xy: {
     type: "int",
     alias: "xy",
-    label: `\\(c_{xy}\\)`,
+    label: `$c_{xy}$`,
     min: 0,
     max: "period",
   },
   c_xx: {
     type: "int",
     alias: "xx",
-    label: `\\(c_{x^2}\\)`,
+    label: `$c_{x^2}$`,
     min: 0,
     max: "period",
   },
   c_yy: {
     type: "int",
     alias: "yy",
-    label: `\\(c_{y^2}\\)`,
+    label: `$c_{y^2}$`,
     min: 0,
     max: "period",
   },
@@ -29,7 +29,7 @@ const CONFIG_SCHEMA = {
   threshold: {
     type: "float",
     alias: "t",
-    label: `\\(\\tau\\)`,
+    label: `$\\tau$`,
     min: 0,
     max: 1,
     step: 0.1,
@@ -52,11 +52,18 @@ const CONFIG_SCHEMA = {
     step: 32,
     shader: false,
   },
-  shape_power: { type: "int", alias: "s", label: `\\(\\rho_s\\)`, min: 0 },
+  shape_power: {
+    type: "int",
+    alias: "s",
+    label: `$\\rho_s$`,
+    min: 0,
+    default: 0,
+  },
   shape_gamma: {
     type: "float",
     alias: "g",
-    label: `\\(\\gamma_s\\)`,
+    label: `$\\gamma_s$`,
+    default: 0,
     min: 0,
     step: 0.125,
   },
@@ -177,6 +184,7 @@ function hashFnEquation(c) {
 // Returns a function render(config)
 function renderer(root, scrollbarWidth) {
   const eqn = root.querySelector(".hv-equation");
+  const eqnCache = {};
   const canvas = root.querySelector(".hv-screen");
   const controlLabels = {};
   root.querySelectorAll(".hv-control").forEach((c) => {
@@ -279,9 +287,19 @@ function renderer(root, scrollbarWidth) {
 
     // Equation
     if (eqn !== null) {
-      eqn.innerHTML = hashFnEquation(config);
-      // MathJax.typesetClear([eqn]);
-      MathJax.typeset([eqn]);
+      // When animating, calling typeset() for every frame causes a memory leak,
+      // which typesetClear() doesn't seem to fix, so we cache previously typeset
+      // equations here.
+      const eqnText = hashFnEquation(config);
+      if (eqnText in eqnCache) {
+        eqn.replaceChildren(eqnCache[eqnText]);
+      } else {
+        const e = document.createElement("span");
+        e.innerHTML = eqnText;
+        eqn.replaceChildren(e);
+        MathJax.typeset([e]);
+        eqnCache[eqnText] = e;
+      }
     }
 
     // Control labels
@@ -367,7 +385,7 @@ function createControls(root, config) {
   );
   if (root.classList.contains("hv-url") && navigator.clipboard) {
     topRow.appendChild(
-      createNode(`<div class="hv-share hv-button">\u{1F4CB}</div>`)
+      createNode(`<div class="hv-share hv-button">\u{260D}</div>`)
     );
   }
   controls.appendChild(topRow);
@@ -413,7 +431,7 @@ function configureCommon(root, config, key) {
   animate.style.display =
     spec.min !== undefined && spec.max != undefined ? "inline-block" : "none";
   animate.dataset.key = key;
-  animate.innerText = isAnimating ? `\u25A0` : `\u25B6`; // u23F9
+  animate.innerText = isAnimating ? `\u25A0` : `\u25B6`;
   animateFpsLabel.style.display = isAnimating ? "inline-block" : "none";
 }
 
@@ -506,7 +524,7 @@ function hvInit(root, scrollbarWidth) {
       navigator.clipboard
         .writeText(window.location.href)
         .then(() => {
-          alert("URL copied to clipboard");
+          alert("Link copied to clipboard");
         })
         .catch((err) => {
           console.error("Failed to copy URL: ", err);

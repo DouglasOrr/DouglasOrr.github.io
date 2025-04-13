@@ -7,6 +7,22 @@
 .hv-equation {
   font-size: normal;
 }
+.hv-title {
+  display: inline-block;
+  margin-bottom: 0.6em;
+  padding: 0.3em;
+  background-color: #555;
+  color: #fff;
+  text-decoration: none;
+  font-weight: bold;
+}
+a.hv-title {
+  background-color: #999;
+}
+a.hv-title:hover {
+  color: #fff;
+  text-decoration: underline;
+}
 
 /* Controls */
 .hv-control {
@@ -21,7 +37,7 @@
   user-select: none;
 }
 .hv-control[data-selected="true"] {
-  border: 2px solid #00f;
+  border: 2px dashed #000;
 }
 .hv-button {
   display: inline-block;
@@ -64,7 +80,7 @@
 /* Common (shared) controls */
 .hv-controls-common {
   margin-top: 0.5em;
-  border: 1px solid #00f;
+  border: 1px dashed #000;
   padding: 0.5em;
   width: fit-content;
 }
