@@ -7,6 +7,8 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 ## ML/Software
 
+2025-04 - [Procedural Textures with Hash Functions](2025-04-hash-textures/article.md)
+
 2024-10 - [Benchmarking `std::{string, string_view, reference_wrapper}`](2024-10-strings/article.md)
 
 2024-04 - [A transformer walk-through, with Gemma](2024-04-transformers/article.md)
