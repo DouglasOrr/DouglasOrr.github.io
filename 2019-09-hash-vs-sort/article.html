@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:og="http://opengraphprotocol.org/schema/">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -8,6 +8,10 @@
     />
     <meta name="author" content="Douglas Orr" />
     <meta name="keywords" content="C++,unique,distinct,deduplication,hashset" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Doug's Diversions" />
+    <meta property="og:title" content="Hash vs Sort">
+<meta property="og:image" content="/2019-09-hash-vs-sort/img/chart_total_items.png">
     <link rel="stylesheet" href="/css/lib.css" />
     <link rel="stylesheet" href="/css/custom.css" />
     <script type="text/javascript" src="/js/custom.js" defer></script>
@@ -35,19 +39,19 @@ auto results = find_unique(items);
 <p>Both methods are based on the same idea: we need to collect identical items together in the same place, so we know where to look for the duplicates. One way to do this is to <strong>sort</strong> the items, after which any duplicates will now be adjacent, so we can make a second pass to scan through, removing adjacent duplicates. It looks a bit like this:</p>
 <p><img alt="sort then copy to find unique items" class="img-fluid" src="img/sort_unique.svg" /></p>
 <p>The first step is any standard sorting algorithm (e.g. <a href="https://en.wikipedia.org/wiki/Quicksort">quicksort</a>). The second step is a linear scan which keeps track of the last item copied into the result as it scans through the array, and doesn't copy an item to the result if it compares equal to the last item. The C++ code to implement <em>sort-unique</em> is simple (mainly because <a href="https://en.cppreference.com/w/cpp/algorithm/unique"><code>std::unique</code></a> already exists to implement step 2):</p>
-<p><strong>sort-unique</strong>
+<p><strong>sort-unique</strong></p>
 <pre><code class="language-cpp">auto results = items;
 std::sort(results.begin(), results.end());
 auto n = std::unique(results.begin(), results.end()) - results.begin();
-results.resize(n);</code></pre></p>
+results.resize(n);</code></pre>
 <p>Since we're interested in the runtime performance of our code, we can use <a href="https://en.wikipedia.org/wiki/Big_O_notation">Big O notation</a> to try give a very rough model of how runtime will scale with data size. In Big-O, <em>sort-unique</em> takes $O(N)$ memory (although it can also be done in-place) and $O(N \log N)$ compute (e.g. if you count comparisons or data movement), due to the sort.</p>
 <h2 id="how-to-find-unique-items-hashing">How to find unique items - hashing</h2>
 <p>Another way to collect identical items together is to <strong>hash</strong> them, so we only have to check items that collide hash buckets to confirm that an item is new. This looks like:</p>
 <p><img alt="hash then copy to find unique items" class="img-fluid" src="img/hash_unique.svg" /></p>
 <p>In C++, you can implement <em>hash-unique</em> by copying the collection into a <a href="https://en.cppreference.com/w/cpp/container/unordered_set"><code>std::unordered_set</code></a> and back out again:</p>
-<p><strong>hash-unique</strong>
+<p><strong>hash-unique</strong></p>
 <pre><code class="language-cpp">std::unordered_set&lt;T&gt; set(items.begin(), items.end());
-std::vector&lt;T&gt; results(set.begin(), set.end());</code></pre></p>
+std::vector&lt;T&gt; results(set.begin(), set.end());</code></pre>
 <p>Again in Big-O, <em>hash-unique</em> takes $O(N)$ memory and $O(N)$ compute (counting <code>std::hash</code> calls, or bucket accesses). So it looks like hashing is going to be our winner - <em>let's see it's actually faster...</em></p>
 <h2 id="benchmarks">Benchmarks</h2>
 <p>It isn't immediately obvious whether <em>sort-unique</em> or <em>hash-unique</em> would be faster for our performance-critical code. Our simple analysis (based on the number of copies, <code>operator&lt;</code> or <code>std::hash</code> calls) said <em>sort-unqiue</em> was $O(N \log N)$ and <em>hash-unique</em> was $O(N)$, but you can't beat actually trying it out. Therefore let's try benchmarking these methods over some example inputs. We'll test things out using C++ to unique vectors of randomly sampled integers with the following variants:</p>
@@ -93,10 +97,12 @@ std::vector&lt;T&gt; results(set.begin(), set.end());</code></pre></p>
 <h3 id="analysis">Analysis</h3>
 <p>Altogether, the runtime of <em>sort-unique</em> followed the trend we expected, $O(N \log N)$, and was independent of the ratio of unique items. <em>Hash-unique</em>, however, takes more time for each unique item, and the runtime jumps when the hash table begins to spill out of L3 cache to main memory (our expected trend of $O(N)$ was a very poor fit to the data).</p>
 <p>To check these observations, we tried to fit a linear predictive model to the runtime, with the features $\left[1, N, N \log(N), N_{unique}, N_{unique} \log(N_{unique})\right]$. Pruning small contributions, this gave:</p>
-<p>$$\begin{align}
+<p>$$
+\begin{align}
 t_{\textit{sort-unique}} &amp;= 8 N \log(N) \\
 t_{\textit{hash-unique}} &amp;= 27 N_{unique} \log(N_{unique}) + 3 N \log(N)\,,
-\end{align}$$</p>
+\end{align}
+$$</p>
 <p>which fits our observation that <em>hash-unique</em> has a high cost per unique item, while <em>sort-unique</em> has a moderate cost per item (whether unique or duplicate), and that even <em>hash-unique</em> fails in practice to scale better than $O(N \log N)$.</p>
 <p>These results suggest the following extreme examples that favour hashing &amp; sorting (with our original moderate example also repeated), again reporting the time per item in nanoseconds:</p>
 <table class="table">
@@ -146,13 +152,13 @@ t_{\textit{hash-unique}} &amp;= 27 N_{unique} \log(N_{unique}) + 3 N \log(N)\,,
 <li>Data: uniform random integers over domain, uniformly resampled to create duplicates</li>
 <li>Stats: run 30 or 60 times, report median</li>
 </ul>
-<p><strong>Environment:</strong>
+<p><strong>Environment:</strong></p>
 <pre><code class="language-none">CPU: i7-4510U, 2.00GHz, 2 cores, 4 MB cache
 Memory: 8 GB DDR3, 1600 MT/s
 OS: Ubuntu 18.04 (64 bit), in Docker
 C++: gcc version 7.4.0  [flags: -O2 -std=c++17]
 Javascript: Node.js v10.16.3
-Java: OpenJDK 11.0.4</code></pre></p></div>
+Java: OpenJDK 11.0.4</code></pre></div>
       </div>
       <div class="row dd-footer">
         <div class="col">

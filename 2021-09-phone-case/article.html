@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:og="http://opengraphprotocol.org/schema/">
   <head>
     <meta charset="utf-8" />
     <meta
@@ -8,6 +8,10 @@
     />
     <meta name="author" content="Douglas Orr" />
     <meta name="keywords" content="deep-learning,visualisation,rnn,nlp" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="Doug's Diversions" />
+    <meta property="og:title" content="My phone case, the hidden state of an RNN">
+<meta property="og:image" content="/2021-09-phone-case/img/phone_case_pattern.png">
     <link rel="stylesheet" href="/css/lib.css" />
     <link rel="stylesheet" href="/css/custom.css" />
     <script type="text/javascript" src="/js/custom.js" defer></script>
@@ -59,10 +63,12 @@
        input, = ctx.saved_tensors
        return grad_output * (T.abs_(input) &lt;= 1)</code></pre>
 <p>I used this nonlinearity in a RNN cell based on the recurrent highway network,</p>
-<p>$$\begin{align}
+<p>$$
+\begin{align}
 &amp;h^{t+1} = \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\
 &amp;\mathrm{carry}, \mathrm{update}, \mathrm{candidate} = \mathrm{split} \left( U h^t + W x^t + b \right),
-\end{align}$$</p>
+\end{align}
+$$</p>
 <p>where $\sigma(z)$ is the logistic sigmoid nonlinearity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:</p>
 <p><img src="img/binary_rhn_model.png" width="70%" alt="model diagram showing a stack: embed, RNN, FFN, FFN, Linear, Cross Entropy Loss" /></p>
 <p>After a bit of tinkering it worked. Final validation performance was 1.9 bits/char, which is bad, but it's at least achieving something with the hidden state. It’s easy to beat this figure with regular nonlinearities, stacked RNNs, wider hidden states, etc., but that’s not the game!</p>
