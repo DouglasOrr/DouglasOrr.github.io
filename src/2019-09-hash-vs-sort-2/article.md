@@ -1,5 +1,6 @@
 title: Hash vs Sort [2]
 keywords: C++,Java,Javascript,unique,distinct,deduplication,hashset
+image: img/chart_total_items_with_custom.png
 
 # Hash vs sort \[part 2\]
 
@@ -40,11 +41,11 @@ return Array.from(unique);
 
 However, _sort-unique_ required our own adjacent-unique loop, as there is no equivalent of `std::unique` in Javascript's built-ins ([code here](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2019-09-hash-vs-sort/hashvssort.js)). Here are the results (median runtime):
 
-|$N$|$N_{unique}/N$|_sort-unique_|_hash-unique_|
-|---|---|---|---|
-|$2^{16}$|$\frac{1}{16}$|519 ns|<span class="result-positive">39 ns</span>|
-|$2^{20}$|$\frac{1}{2}$|1284 ns|<span class="result-positive">182 ns</span>|
-|$2^{24}$|$1$|1571 ns|<span class="result-positive">365 ns</span>|
+| $N$      | $N_{unique}/N$ | _sort-unique_ | _hash-unique_                               |
+| -------- | -------------- | ------------- | ------------------------------------------- |
+| $2^{16}$ | $\frac{1}{16}$ | 519 ns        | <span class="result-positive">39 ns</span>  |
+| $2^{20}$ | $\frac{1}{2}$  | 1284 ns       | <span class="result-positive">182 ns</span> |
+| $2^{24}$ | $1$            | 1571 ns       | <span class="result-positive">365 ns</span> |
 
 These headline performance numbers show that _hash-unique_ is much (5-20x) faster than _sort-unique_; we suspect this is because we had to implement the second pass of _sort-unique_ (which removes adjacent duplicates) as a Javascript loop (there is no built-in method to speed it up). However, the performance of _hash-unique_ looks very good - let's compare it with C++:
 
@@ -56,11 +57,11 @@ Not too bad, Javascript, for a language that is meant to be slower than C++! Cle
 
 We tried the same again in Java. Again we're testing collections of integers, but in Java they can be "boxed" (held in an Object) e.g. `HashSet<Integer>`, or unboxed (held directly as a primitive value) e.g. `int[]`. We decided to use unboxed `int` values wherever possible, but in order to use `HashSet`, our implementation of _hash-unique_ boxed them temporarily. The results show good performance in general:
 
-|$N$|$N_{unique}/N$|_sort-unique_|_hash-unique_|
-|---|---|---|---|
-|$2^{16}$|$\frac{1}{16}$|92 ns|<span class="result-positive">38 ns</span>|
-|$2^{20}$|$\frac{1}{2}$|138 ns|194 ns|
-|$2^{24}$|$1$|<span class="result-positive">157 ns</span>|369 ns|
+| $N$      | $N_{unique}/N$ | _sort-unique_                               | _hash-unique_                              |
+| -------- | -------------- | ------------------------------------------- | ------------------------------------------ |
+| $2^{16}$ | $\frac{1}{16}$ | 92 ns                                       | <span class="result-positive">38 ns</span> |
+| $2^{20}$ | $\frac{1}{2}$  | 138 ns                                      | 194 ns                                     |
+| $2^{24}$ | $1$            | <span class="result-positive">157 ns</span> | 369 ns                                     |
 
 This seems close enough to our original C++ results that it's worth comparing the trend:
 

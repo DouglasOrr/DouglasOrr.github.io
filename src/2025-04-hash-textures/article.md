@@ -1,5 +1,7 @@
 title: Procedural Textures with Hash Functions
 keywords: graphics,maths,hash-functions
+image: img/preview.png
+description: A visual exploration of a family of 2D hash functions for procedural texturing, where a simple quadratic equation produces amazing variety as the parameters are varied.
 
 <script src="./hash_textures.js"></script>
 <link rel="stylesheet" href="./hash_textures.css">

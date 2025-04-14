@@ -1,5 +1,6 @@
 title: A transformer walk-through, with Gemma
 keywords: deep-learning,llm,gemma
+image: img/attention.png
 
 # A transformer walk-through, with Gemma
 

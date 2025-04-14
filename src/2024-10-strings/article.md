@@ -1,5 +1,6 @@
 title: Benchmarking `std::{string, string_view, reference_wrapper}`
 keywords: C++,string,performance
+image: img/bytes_per_entry.png
 
 # Benchmarking `std::{string, string_view, reference_wrapper}`
 

@@ -1,15 +1,17 @@
 import argparse
 import glob
 import html
-import inotify.adapters
 import io
-import jsmin
 import logging
-import markdown
 import os
 import re
 import shutil
 import urllib.request
+from pathlib import Path
+
+import inotify.adapters
+import jsmin
+import markdown
 
 
 class RenameLinksProcessor(markdown.treeprocessors.Treeprocessor):
@@ -115,10 +117,11 @@ class RenderRule(Rule):
         ]
     )
 
-    def __init__(self, target, source, template):
+    def __init__(self, target, source, template, root):
         super().__init__(target)
         self.source = source
         self.template = template
+        self.root = root
 
     def _build(self):
         self.MARKDOWN.reset()
@@ -129,9 +132,23 @@ class RenderRule(Rule):
             body = self.MARKDOWN.convert(source_f.read())
         title = " ".join(self.MARKDOWN.Meta["title"])
         keywords = ",".join(self.MARKDOWN.Meta["keywords"])
+        og_meta = []
+        og_meta.append(f'<meta property="og:title" content="{title}">')
+        if "image" in self.MARKDOWN.Meta:
+            src = self.MARKDOWN.Meta["image"][0]
+            src = (
+                Path(Path(self.target).parent, src)
+                .resolve()
+                .relative_to(Path(self.root).resolve())
+            )
+            og_meta.append(f'<meta property="og:image" content="/{src}">')
+        if "description" in self.MARKDOWN.Meta:
+            description = " ".join(self.MARKDOWN.Meta["description"])
+            og_meta.append(f'<meta property="og:description" content="{description}">')
         html = (
             template.replace("{{title}}", title)
             .replace("{{keywords}}", keywords)
+            .replace("{{og-meta}}", "\n".join(og_meta))
             .replace("{{body}}", body)
         )
         with open(self.target, "w", encoding="utf-8") as target_f:
@@ -204,7 +221,10 @@ class Builder:
     def _render_rule(self, src):
         dest = self._src_to_dest(src).replace(".md", ".html")
         return RenderRule(
-            dest, src, template=os.path.join(self.src_root, self.SRC_TEMPLATE)
+            dest,
+            src,
+            template=os.path.join(self.src_root, self.SRC_TEMPLATE),
+            root=self.dest_root,
         )
 
     def _get_rules(self, src):

@@ -1,5 +1,6 @@
 title: My phone case, the hidden state of an RNN
 keywords: deep-learning,visualisation,rnn,nlp
+image: img/phone_case_pattern.png
 
 # My phone case, the hidden state of an RNN
 
@@ -8,7 +9,6 @@ What I needed was a new phone case. But I wanted a case that declares “my owne
 Here’s the final product. Not to everyone’s taste, I’m sure, but you’ve gotta love your own.
 
 <img src="img/phone_case_photo_post.jpg" width="50%" alt="photo of a phone with a blue and white specked pattern on the case" />
-
 
 ## Vision
 
@@ -21,7 +21,6 @@ A hidden state is usually a vector of real numbers. But to give my RNN a harder 
 The end result should be a grid of pixels like this:
 
 ![diagram showing a grid of hidden states by characters in text](img/phone_case_diagram.jpg)
-
 
 ## Training a model
 
@@ -62,17 +61,18 @@ class RelaxedBinaryGate(T.autograd.Function):
 
 I used this nonlinearity in a RNN cell based on the recurrent highway network,
 
-$$\begin{align}
+$$
+\begin{align}
 &h^{t+1} = \mathrm{RelaxedBinaryGate} \left( \sigma(\mathrm{carry}) \odot h^t + \sigma(\mathrm{update}) \odot \mathrm{candidate} \right), \\\\
 &\mathrm{carry}, \mathrm{update}, \mathrm{candidate} = \mathrm{split} \left( U h^t + W x^t + b \right),
-\end{align}$$
+\end{align}
+$$
 
 where $\sigma(z)$ is the logistic sigmoid nonlinearity and $\odot$ denotes elementwise product. I put this RNN into a model that looked like:
 
 <img src="img/binary_rhn_model.png" width="70%" alt="model diagram showing a stack: embed, RNN, FFN, FFN, Linear, Cross Entropy Loss" />
 
 After a bit of tinkering it worked. Final validation performance was 1.9 bits/char, which is bad, but it's at least achieving something with the hidden state. It’s easy to beat this figure with regular nonlinearities, stacked RNNs, wider hidden states, etc., but that’s not the game!
-
 
 ## Sorting hidden units
 
@@ -106,20 +106,18 @@ The idea is to first pick a fixed start and end and an overall order for conside
 
 I'm not sure there's much substantial insight to be gained from this visualisation, but it does the job of decorating a phone. Hidden units in this model show strong temporal correlation - the states are somewhat "sticky" (looking left-right along a single row). But this is no surprise given the RHN cell definition, which bakes this into the update rule. Also, some groups of units transition at the same point in time (looking up-down along a single column), an effect that is enhanced by the similarity-based row ordering.
 
-
 ## Final thoughts
 
 All that remained was to get it printed. I used [this company](https://uk.casestation.com/) (no affiliation) and it seems well done but I’m sure there are many other good options.
 
 As you’ve probably gathered, I’m very happy with my case. Making it has taught me that I should step back early and think about the problem I’m working on. Who knows, it might be NP-hard. I’ve also learnt that I can lie about my gradient with impunity, the optimizer can muddle through. You’ve got to love deep learning!
 
-
 ---
 
 ## References & materials
 
- - Training notebook: [GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb), [Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb)
- - Visualisation notebook: [GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb), [Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb)
- - Transformer: [Attention is all you need](https://arxiv.org/abs/1706.03762), _Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez A N, Kaiser Ł, Polosukhin I._
- - RNN (LM): [Recurrent neural network based language model](https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf), _Mikolov T, Karafiát M, Burget L, Černocký J, Khudanpur S._
- - RHN: [Recurrent highway networks](https://arxiv.org/abs/1607.03474), _Zilly J G, Srivastava R K, Koutnık J, Schmidhuber J._
+- Training notebook: [GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb), [Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_train.ipynb)
+- Visualisation notebook: [GitHub](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb), [Colab](https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-09-phone-case/phone_case_viz.ipynb)
+- Transformer: [Attention is all you need](https://arxiv.org/abs/1706.03762), _Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez A N, Kaiser Ł, Polosukhin I._
+- RNN (LM): [Recurrent neural network based language model](https://www.fit.vutbr.cz/research/groups/speech/publi/2010/mikolov_interspeech2010_IS100722.pdf), _Mikolov T, Karafiát M, Burget L, Černocký J, Khudanpur S._
+- RHN: [Recurrent highway networks](https://arxiv.org/abs/1607.03474), _Zilly J G, Srivastava R K, Koutnık J, Schmidhuber J._

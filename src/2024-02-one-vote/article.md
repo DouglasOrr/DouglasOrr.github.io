@@ -1,5 +1,6 @@
 title: One {what} one vote
 keywords: non-technical,economics
+image: img/power_cartoon.png
 
 # One {what} one vote
 
