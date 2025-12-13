@@ -28,7 +28,7 @@
 <p>Autodiff is the heart of a deep learning framework<sup id="fnref:heart"><a class="footnote-ref" href="#fn:heart">1</a></sup>. But it’s very easy to take it for granted and never peek under the hood to see how the engine works. So in this post, we'll make sure we understand the basics by implementing autodiff in a few lines of numpy.</p>
 <p>This post is a guided walk though the basic bits of a usable autodiff implementation. If you would rather just read the code, jump straight to our notebook on <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">GitHub</a> or <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2021-11-autodiff/autodiff.ipynb">Colab</a>.</p>
 <p><em>Tiny autodiff is no new idea - see also Andrej Karpathy's <a href="https://github.com/karpathy/micrograd">micrograd</a>, amongst others.</em></p>
-<h2 id="the-chain2">The Chain<sup id="fnref:play"><a class="footnote-ref" href="#fn:play">2</a></sup></h2>
+<h2 id="the-chain">The Chain<sup id="fnref:play"><a class="footnote-ref" href="#fn:play">2</a></sup></h2>
 <p>Autodiff is the chain rule automated. The chain rule says that for $y = f(g(x))$:
 $$
 \frac{\partial y}{\partial x} = \left. \frac{\partial f(z)}{\partial z} \right|_{z=g(x)} \frac{\partial g(x)}{\partial x}

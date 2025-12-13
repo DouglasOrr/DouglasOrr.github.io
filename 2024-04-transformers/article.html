@@ -31,7 +31,7 @@
 <p>We'll walk through this example using <strong>Gemma 2B</strong>, with an accompanying <strong>notebook (<a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2024-04-transformers/gemma_walkthrough.ipynb">github</a>, <a href="https://colab.research.google.com/github/DouglasOrr/DouglasOrr.github.io/blob/examples/2024-04-transformers/gemma_walkthrough.ipynb">Colab</a>)</strong> which provides unadorned code for everything we'll see.</p>
 <p>There are two ways to read this post: the main text describes the implementation, or what is required to run Gemma. The expandable sections add details about why the code does this, some of the machine learning model-building behind the code.</p>
 <details>
-<p><summary>Understanding preliminaries (dot product)</summary></p>
+<summary>Understanding preliminaries (dot product)</summary>
 <p>To follow some of the optional "understanding" sections in this post, it's worth recapping the dot product between two vectors:</p>
 <pre><code class="language-python">def dot(a, b): return sum(a_i * b_i for a_i, b_i in zip(a, b))</code></pre>
 <p>It acts as a test of <em>agreement</em>. Here's an example of the dot product between some vectors in 2D:</p>
@@ -46,7 +46,7 @@ input_ids = tokenizer(&quot;I want to move&quot;).input_ids
 # input_ids = [2, 235285, 1938, 577, 3124]</code></pre>
 <p>The model works on sequences of <em>subword tokens</em>, represented as integers in the range [0, 256000), such as 1938 (=&gt; "▁want"). Since the input comes in as a single long string, we use a tokenizer to first to split the string into tokens, second to map these tokens to numeric IDs.</p>
 <details>
-<p><summary>Understanding tokenisation</summary></p>
+<summary>Understanding tokenisation</summary>
 <p>Tokenisation is defined via a <em>vocabulary</em>, a large set of tokens that are understood by the model. These tokens might be whole words e.g. "The" or parts of words, e.g. " superlative" is split into ["▁super", "lative"].</p>
 <pre><code class="language-python">input_ids = tokenizer(&quot;The superlative&quot;).input_ids
 print(tokenizer.convert_ids_to_tokens(input_ids))
@@ -56,7 +56,7 @@ print(tokenizer.convert_ids_to_tokens(input_ids))
 <li>It is <em>subword</em>, able to split long words. (Since most characters are included, it can tokenize even gibberish "nvdkjsv" =&gt; ["n", "vd", "k", "js", "v"].)</li>
 <li>It doesn't throw whitespace away, mapping " " to "▁".</li>
 <li>It doesn't normalise capitalisation (651 =&gt; "The", 1175 =&gt; "the").</li>
-<li>It prepends a special "beginning of sequence" token, 2 =&gt; "&lt;bos>".</li>
+<li>It prepends a special "beginning of sequence" token, 2 =&gt; "&lt;bos&gt;".</li>
 <li>The vocabulary is very large, <code>len(tokenizer.vocab)</code> is 256000.</li>
 </ul>
 <p>All but the last point are standard for modern LLMs. We use subword tokenization since it gives great coverage of any input text. We include whitespace and don't normalise capitalisation to avoid all the cases where these rules have exceptions and ambiguities, passing these down to the model to figure out (e.g. when is the token "apple" the same thing as "Apple"?)</p>
@@ -71,7 +71,7 @@ print(tokenizer.convert_ids_to_tokens(input_ids))
 # hiddens.shape = (5, 2048)</code></pre>
 <p>For each input token ID (e.g. 1938 =&gt; "▁want"), select the corresponding row from the large embedding table. The result, that we'll call <code>hiddens</code>, has shape (5, 2048), where there are 5 tokens along the sequence dimension, and 2048 components along the hidden dimension.</p>
 <details>
-<p><summary>Understanding embedding</summary></p>
+<summary>Understanding embedding</summary>
 <p>As we're about to see, most operations in Gemma are a dot product similarity between high-dimensional vectors. On one level, embedding lookup is just the simplest way to get from IDs to high-dimensional vectors. Note also that the numeric IDs associated with tokens are arbitrary (5000 =&gt; "画像", 5001 =&gt; "▁fish", 5002 =&gt; "mento"); an embedding table is desirable as it has no sense of locality or smoothness between consecutive IDs.</p>
 <p>Since the model attempts to predict words based on similarity, we'd expect words that appear in the same contexts to have similar embeddings. In the figure below, we plot the cosine similarity between a few selected tokens from the vocabulary. Cosine similarity is the dot product with the length of input vectors normalised out, calculated as <code>dot(a, b) / sqrt(dot(a, a) * dot(b, b))</code>.</p>
 <p><img alt="a grid of coloured squares representing cosine similarity between embeddings; &quot;red&quot; and &quot;green&quot; are similar; &quot;London&quot;, &quot;Paris&quot; and &quot;Tokyo&quot; are similar; &quot;pleasant&quot; and &quot;vibrant&quot; are similar; &quot;with&quot; really is on it's own" class="img-fluid" src="img/embeddings.png" /></p>
@@ -82,7 +82,7 @@ print(tokenizer.convert_ids_to_tokens(input_ids))
 <pre><code class="language-python">hiddens *= hiddens.shape[-1] ** 0.5</code></pre>
 <p>In Gemma, embedding parameters are shared between the input embedding lookup and the output embedding projection. This is a reasonable design, but some care is required to give appropriate scale to inputs and outputs. The scaling factor of <code>sqrt(hidden_size)</code> makes inputs larger without interfering with the output projection.</p>
 <details>
-<p><summary>Understanding post-embedding rescaling</summary></p>
+<summary>Understanding post-embedding rescaling</summary>
 <p>To see the need for a scaling factor, we have to skip ahead and consider the final output projection as well as the input embedding lookup. The final projection looks like:</p>
 <pre><code class="language-python">logits = hiddens @ p.embedding.T</code></pre>
 <p>So each element of <code>logits</code> comes from a dot product between <code>hiddens</code> and an embedding vector of length 2048. Typically, we initialise operations to preserve the <em>scale</em> or standard deviation of their inputs. In this case, this means the scale of <code>embedding</code> should be <code>1/sqrt(2048)</code>.</p>
@@ -105,7 +105,7 @@ hiddens ≈ attention(embeddings)</code></pre>
     hiddens += mlp(p_mlp, rms_norm(p_mlp.norm, hiddens))</code></pre>
 <p>Here, Gemma uses the concept of <em>residual layers</em>, which build deep (many-layered) functions using the iteration <code>x = x + layer(norm(x))</code> rather than the simpler MLP iteration <code>x = layer(x)</code>.</p>
 <details>
-<p><summary>Understanding residual layers</summary></p>
+<summary>Understanding residual layers</summary>
 <p>First, some background: when we talk of <em>representations</em>, these are the 2048-element vectors that pass through Gemma's operations. The idea of a residual layer is that every layer shouldn't create an entirely new type of representation, replacing the old one with <code>x = layer(x)</code>. It should instead just tweak the existing representation with an update <code>x = x + layer(norm(x))</code>.</p>
 <p>If we call <code>x</code> the <em>skip</em> connection, <code>layer(norm(x))</code> the <em>residual</em> connection, and use standard deviation ($\sigma_s$, $\sigma_r$ respectively) to give an indication of the scale of the contribution of each, we can look at each layer's residual contribution when the skip and residual are added. Since uncorrelated variances would add, we use $\sqrt{\sigma_r^2 / (\sigma_r^2 + \sigma_s^2)}$ as a metric for the <em>update scale</em> of the residual. If 0, the output is all from the skip connection, the layer doesn't contribute much at all; if 1, the output is all from the layer, the skip connection doesn't contribute much.</p>
 <p><img alt="A plot of blue and orange dots for the attention and mlp layer's update scales. Most points hover around the 0.05 mark, with the first layer having a big attention update, and the last layer having a big mlp update." class="img-fluid" src="img/residual_updates.png" /></p>
@@ -126,7 +126,7 @@ z = rms_norm(hiddens)</code></pre>
 <p>It's worth considering shapes and data types carefully. If the input shape <code>x.shape</code> is (5, 2048), then the normaliser <code>torch.sqrt(...)</code> has shape (5, 1). This is because we're doing a mean over the last axis, processing each token in the sequence independently. The division <code>z /= torch.sqrt(...)</code> performs <em>broadcasting</em>, dividing each element of a 2048-vector by the same value (different for each token).</p>
 <p>Since some data types have limited range (e.g. 65e3 in float16 versus 3e48 in float32), it may not be safe to do <code>x ** 2</code> directly. If <code>abs(x) &gt; 256</code>, this will overflow and cause an error. Therefore, we cast to <code>float32</code> at the beginning, and back to the original <code>x.dtype</code> at the end of the op. There is also a small epsilon value added to the denominator as <code>sqrt(... + p.eps)</code>, which helps protect against division by a very small number.</p>
 <details>
-<p><summary>Understanding RMSNorm</summary></p>
+<summary>Understanding RMSNorm</summary>
 <p>To understand why Gemma has <code>rms_norm</code> at every layer, consider the update <code>hiddens = hiddens + layer(rms_norm(hiddens))</code>. The layers aren't linear, but they also don't saturate when inputs are large, so if we're just thinking about scale, we could imagine something like the following:</p>
 <pre><code class="language-python"># Without norm
 hiddens = 1
@@ -177,7 +177,7 @@ def attention(x: Tensor) -&gt; Tensor:
 </ol>
 <p>Finally, the outputs of the heads are mixed together by flattening them from (5, 1, 8, 256) -&gt; (5, 2048) then following a final output projection, <code>o_proj</code>.</p>
 <details>
-<p><summary>Understanding Attention</summary></p>
+<summary>Understanding Attention</summary>
 <p>Multi-query attention in Gemma can be thought of as 8 independent attention operations, which share some parameters (more on that later). The first step is projection by <code>q_proj</code>, <code>k_proj</code> and <code>v_proj</code>, which are trained model parameter matrices of shape <code>(2048, 256)</code>. This means picking 256 directions to test each 2048-vector in, then creating a 256-vector containing the result of each of these tests. From this, we get 5 <em>query</em> vectors, 5 <em>key</em> vectors and 5 <em>value</em> vectors, all of 256 dimensions.</p>
 <p>A high-level understanding of the next bit has an analogy to databases: there is a database of key-&gt;value mappings, and we want to retrieve them based on a query. Rather than just retrieving one (e.g. the closest match between query and key), however, we're going to get a weighted mixture of everything.</p>
 <p>First, we use dot product to test for similarity between queries and keys (step 1 above). This matches queries against keys, producing a score for each (q, k) pair. We scale the result by <code>1/sqrt(256)</code>, which compensates for the sum inside the dot product over 256 entries.</p>
@@ -229,7 +229,7 @@ q, k = embed_rotate(q, k, theta=p.rope_theta)</code></pre>
 </ol>
 <p>Inserting this transformation between the calculation of <code>q,k</code> and the <code>self_attn</code> function that uses them to compute attention is sufficient to give Gemma the ability to deliberately attend to tokens based on position, not just content.</p>
 <details>
-<p><summary>Understanding rotary positional encoding</summary></p>
+<summary>Understanding rotary positional encoding</summary>
 <p>Let's start with an example. Imagine we have the same <code>q</code> and <code>k</code> vectors in each position, <code>(x, y) = (1, 0)</code>. Then, after rotary encoding with two different frequencies (the highest with frequency 1, and component 20/128 with frequency 0.24), we get this:</p>
 <p><img alt="5 vectors, labelled k_0 to k_4, the first pointing right along the x-axis, the others rotated at regular intervals about (0, 0)." class="img-fluid" src="img/rotary_example.png" /></p>
 <p>The important property to note here is the <em>rotational invariance</em> of dot product. Since the pre-rotation vectors were the same, the dot product $k_0 \cdot k_1$ is the same as $k_1 \cdot k_2$, and $k_2 \cdot k_3$, etc. (Similarly, $k_0 \cdot k_2 = k_1 \cdot k_3$, etc.) So, the dot product between RoPE-encoded vectors doesn't depend on the absolute position of the tokens <code>[0, 1, 2, 3, 4]</code>, but only on the relative offset between them and the original vector before it was rotated.</p>
@@ -256,7 +256,7 @@ q, k = embed_rotate(q, k, theta=p.rope_theta)</code></pre>
 <p>The MLP takes input representations for each token as a 2048-vector, then applies the same transformation to each of the tokens independently.</p>
 <p>First, make two separate projections (dot products with trained parameter matrices) to get two 16384-vectors. One of these vectors, called the <em>gate</em> is passed through a nonlinear function called <em>gelu</em> that applies to each element. We'll treat the function as a black box, but to a first approximation, <code>gelu(x)</code> is quite close to <code>max(0, x)</code>. The gate and other vector are multiplied element-by-element, then another trained down-projection produces the result, a 2048-vector.</p>
 <details>
-<p><summary>Understanding the MLP</summary></p>
+<summary>Understanding the MLP</summary>
 <p>The MLP is a function from a 2048-vector representing a single token to a 2048-vector. The code shown above runs in parallel over the sequence axis, but unlike in attention, each token is processed independently. In this section, we'll build up the complex behaviour of Gemma's GeGLU MLP with a tiny example based on 2-vectors (and a 3-vector inside the MLP).</p>
 <p><em>Note that the acronym MLP stands for multi-layer perceptron, which is slightly old-fashioned language to talk about a chain of dot product (projections) and nonlinearities.</em></p>
 <p><strong>A. Linear</strong></p>
@@ -304,36 +304,36 @@ y = z @ down_proj</code></pre>
 <p>Before we predict the output tokens, we run RMSNorm one final time on the token representations:</p>
 <pre><code class="language-python">hiddens = rms_norm(p.final_norm, hiddens)</code></pre>
 <details>
-<p><summary>Understanding the final norm</summary></p>
+<summary>Understanding the final norm</summary>
 <p>We include a final norm because, even though the RMSNorm on the residual branches has stopped the hidden scale from exploding exponentially, it still may have grown considerably. High RMS values going into the output projection would cause very spiky (over-confident) softmax outputs, so a final norm allows the model to use large scale within the body of the transformer without propagating them to become over-confident outputs.</p>
 <p>For our example:</p>
 <table class="table">
 <thead>
 <tr>
-<th align="right">Token:</th>
-<th align="center">&lt;bos></th>
-<th align="center">I</th>
-<th align="center">▁want</th>
-<th align="center">▁to</th>
-<th align="center">▁move</th>
+<th style="text-align: right;">Token:</th>
+<th style="text-align: center;">&lt;bos&gt;</th>
+<th style="text-align: center;">I</th>
+<th style="text-align: center;">▁want</th>
+<th style="text-align: center;">▁to</th>
+<th style="text-align: center;">▁move</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="right">Before RMSNorm, RMS:</td>
-<td align="center">88.5</td>
-<td align="center">16.3</td>
-<td align="center">14.4</td>
-<td align="center">12.9</td>
-<td align="center">12.6</td>
+<td style="text-align: right;">Before RMSNorm, RMS:</td>
+<td style="text-align: center;">88.5</td>
+<td style="text-align: center;">16.3</td>
+<td style="text-align: center;">14.4</td>
+<td style="text-align: center;">12.9</td>
+<td style="text-align: center;">12.6</td>
 </tr>
 <tr>
-<td align="right">After RMSNorm, RMS:</td>
-<td align="center">2.2</td>
-<td align="center">2.2</td>
-<td align="center">2.2</td>
-<td align="center">2.2</td>
-<td align="center">2.2</td>
+<td style="text-align: right;">After RMSNorm, RMS:</td>
+<td style="text-align: center;">2.2</td>
+<td style="text-align: center;">2.2</td>
+<td style="text-align: center;">2.2</td>
+<td style="text-align: center;">2.2</td>
+<td style="text-align: center;">2.2</td>
 </tr>
 </tbody>
 </table>
@@ -345,7 +345,7 @@ y = z @ down_proj</code></pre>
 # logits.shape = (5, 256000)</code></pre>
 <p>This operation shares the same parameters <code>embedding</code> used in embedding lookup step earlier. This is just as well, as it consumes a chunky 0.5B parameters of the 2B parameter model.</p>
 <details>
-<p><summary>Understanding the output projection</summary></p>
+<summary>Understanding the output projection</summary>
 <p>There's not much to add beyond our earlier discussion <em>"understanding embedding lookup"</em>. In the same way as embedding lookup, the 2048-vector space gives enough freedom to predict 256000 tokens, since it can exploit commonalities between words, placing similar words together in embedding space.</p>
 <p>The output of this hidden-embedding product is a score for each token in the vocabulary. We can turn this score into a probability using <code>probability = softmax(score)</code>, where <code>y = softmax(x)</code> means <code>z = exp(x)</code>, <code>y = z / z.sum()</code>. For our example, this gives the following top 10 results after each token:</p>
 <p><img alt="A plot of prediction probability after each term in the sequence &quot;&lt;bos&gt; I want to move&quot;. The predictions have different tokens (e.g. &quot;I&quot; followed by &quot;have&quot;) and probabilities." class="img-fluid" src="img/predictions.png" /></p>
