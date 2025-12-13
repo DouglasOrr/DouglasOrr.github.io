@@ -175,7 +175,7 @@ class DownloadRule(Rule):
 
 
 class Builder:
-    DEST_NOCLEAN = {".git", "README.md", "server.log"}
+    DEST_NOCLEAN = {".git", "README.md", "server.log", ".nojekyll"}
     DEST_LIBS = [
         (
             "css/lib.css",
@@ -298,11 +298,11 @@ if __name__ == "__main__":
     parser.add_argument("src")
     parser.add_argument("dest")
     parser.add_argument(
-        "--debug", action="store_true", help="watch for changes and re-render"
+        "--dev", action="store_true", help="watch for changes and re-render"
     )
     args = parser.parse_args()
 
     builder = Builder(args.src, args.dest)
     builder.rebuild()
-    if args.debug:
+    if args.dev:
         builder.watch()

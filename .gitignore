@@ -1,9 +1,10 @@
 .ipynb_checkpoints
 __pycache__
+.venv
 .vscode
 
 /data
 /examples
 /local
 /site
-/site_debug
+/site_dev

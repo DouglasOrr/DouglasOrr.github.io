@@ -1,0 +1,4 @@
+inotify
+jsmin
+livereload
+markdown

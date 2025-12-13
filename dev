@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+
+import argparse
+import subprocess
+import sys
+import threading
+from pathlib import Path
+from typing import Any, Callable, TypeVar
+
+import livereload
+
+# Utilities
+
+
+def run(*cmd: str | None) -> None:
+    """Run the given command, exit immediately on error."""
+    command = [arg for arg in cmd if arg is not None]
+    print(f"$ {' '.join(command)}", file=sys.stderr)
+    if exit_code := subprocess.call(command):
+        sys.exit(exit_code)
+
+
+T = TypeVar("T")
+
+
+def cli(*args: Any, **kwargs: Any) -> Callable[[T], T]:
+    """Decorator to create a command line subparser."""
+
+    def wrap(fn: T) -> T:
+        if not hasattr(fn, "cli_args"):
+            setattr(fn, "cli_args", [])
+        if args or kwargs:
+            getattr(fn, "cli_args").append((args, kwargs))
+        return fn
+
+    return wrap
+
+
+# Commands
+
+DEFUALT_PORT = 8000
+
+
+@cli("--dev", action="store_true", help="build in development mode")
+@cli("--port", type=int, default=DEFUALT_PORT, help="port to serve on (dev mode only)")
+def build(dev: bool, port: int = DEFUALT_PORT) -> None:
+    """build the site"""
+    if dev:
+        server = livereload.Server()
+        server.root = "site_dev"
+        server.watch("src/**/*")
+        threading.Thread(
+            target=server.serve, kwargs=dict(port=port, open_url_delay=1), daemon=True
+        ).start()
+        run("python", "tools/render.py", "src", "site_dev", "--dev")
+    else:
+        site = Path("site")
+        remote = "git@github.com:DouglasOrr/DouglasOrr.github.io.git"
+        if not (site / ".git").exists():
+            run("git", "clone", remote, str(site))
+        run("git", "-C", str(site), "fetch")
+        run("python", "tools/render.py", "src", "site")
+        run("git", "-C", str(site), "add", ".")
+        run("git", "-C", str(site), "commit", "-m", "Publish")
+
+
+@cli("file", help="file to check")
+def spellcheck(file: str) -> None:
+    """check spelling"""
+    run("aspell", "--home-dir=tools/aspell", "check", file)
+
+
+# Script
+def _main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.set_defaults(action=lambda: build(dev=True))
+    subparsers = parser.add_subparsers()
+
+    for key, value in globals().items():
+        if hasattr(value, "cli_args"):
+            sub = subparsers.add_parser(key.replace("_", "-"), help=value.__doc__)
+            for arg_args, arg_kwargs in getattr(value, "cli_args"):
+                sub.add_argument(*arg_args, **arg_kwargs)
+            sub.set_defaults(action=value)
+
+    args = vars(parser.parse_args())
+    action = args.pop("action")
+    action(**args)
+
+
+if __name__ == "__main__":
+    _main()
