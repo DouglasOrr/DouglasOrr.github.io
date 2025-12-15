@@ -51,15 +51,13 @@ For the rest of this post, we'll try to unpick the function. If you'd prefer to 
 
 ## The idea
 
-I was trying to make a game that obeyed a 2-bit colour palette. With a strict interpretation of the rules, this means no interpolation or antialiasing — the pixels onscreen should only be one of 4 colours. So I needed textures that could align perfectly to the screen. The not-at-all novel solution:
+I was trying to make a game that obeyed a 2-bit colour palette. With a strict interpretation of the rules, this means no interpolation or antialiasing — the pixels onscreen should only be one of 4 colours. So I needed textures that could align perfectly to the screen. The idea I ran with was to **hash the (x, y) screen-space pixel coordinates**, use this value to choose a colour.
 
-_Hash the (x, y) screen-space pixel coordinate, and use it to choose a colour._
-
-It turns out that this works fine, as long as the camera and viewports are fixed, and this very simple hash function is remarkably varied and interesting:
+It turns out that this works fine, as long as the camera and viewports are fixed, and a simple hash function can be remarkably varied and interesting:
 
 $$(c_x \, x + c_y \, y + c_{xy} \, x \, y + c_{x^2} \, x^2 + c_{y^2} \, y^2) \,\mathrm{mod} \, m < \tau \, m$$
 
-In Python, for example:
+In Python, for example (or see [notebook](https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2025-04-hash-textures/textures.ipynb)):
 
 ```python
 c_x, c_y, c_xy, c_xx, c_yy = 1, 1, 0, 1, 1
