@@ -12,8 +12,11 @@
     <meta property="og:site_name" content="Doug's Diversions" />
     <meta property="og:title" content="Benchmarking `std::{string, string_view, reference_wrapper}`">
 <meta property="og:image" content="/2024-10-strings/img/bytes_per_entry.png">
+
     <link rel="stylesheet" href="/css/lib.css" />
     <link rel="stylesheet" href="/css/custom.css" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+
     <script type="text/javascript" src="/js/custom.js" defer></script>
     <script type="text/javascript" src="/js/lib.js" defer></script>
     <title>Benchmarking `std::{string, string_view, reference_wrapper}`</title>
@@ -99,9 +102,8 @@ for (auto&amp; value : values) {
 <li>Use <code>std::string_view</code> to optimize memory with ownership (using a separate pool), especially when there are substrings that could be aliased.</li>
 </ul>
 <p>If we need to optimize to the maximum, we'll inevitably go full-custom anyway: compressing pointers and sizes, using <a href="https://en.wikipedia.org/wiki/Trie">prefix trees</a>, etc. But the STL gives us a few options in our standard toolkit before we have to go as far as that!</p>
-<div style="height: 5em;"></div>
+<hr class="appendix-separator">
 
-<hr />
 <h2 id="appendix-benchmarking-notes">Appendix - benchmarking notes</h2>
 <p>Benchmarking <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/tree/examples/2024-10-strings">code is here</a>, and full <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/tree/data/2024-10-strings">data &amp; analysis are here</a>. System details:</p>
 <pre><code class="language-none">     CPU: i7-1165G7, 2.80GHz, 4 cores, 12 MB L3 cache
@@ -120,9 +122,9 @@ Compiler: clang 18.1.3 [flags: -O3 -std=c++20]
       <div class="row dd-footer">
         <div class="col">
           <p>
-            Note: All views or opinions expressed here are those of the author
-            at time of writing and do not represent those of any employer or
-            other organisation, past or present.
+            All views or opinions expressed here are those of the author at time
+            of writing and do not represent those of any employer or other
+            organisation, past or present.
           </p>
           <p>
             Please let me know of errors or missing references by

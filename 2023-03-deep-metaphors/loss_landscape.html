@@ -11,8 +11,11 @@
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="Doug's Diversions" />
     <meta property="og:title" content="Loss Landscape">
+
     <link rel="stylesheet" href="/css/lib.css" />
     <link rel="stylesheet" href="/css/custom.css" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+
     <script type="text/javascript" src="/js/custom.js" defer></script>
     <script type="text/javascript" src="/js/lib.js" defer></script>
     <title>Loss Landscape</title>
@@ -32,7 +35,7 @@
 <p><strong>The good</strong> In this metaphor, we get a simple and intuitive way to think about the dynamics of training deep learning models. This is no small thing—inference in neural networks is complicated enough, so training dynamics often feel way out of reach. It also can provide an intuitive interpretation of momentum terms in optimisers, and perhaps also for variance terms (Adam).</p>
 <p>The metaphor enjoys a tight correspondence: latitude-longitude - parameter values, altitude - loss value, slope direction - gradient, massive object descending under gravity - momentum, sharpness of terrain - Hessian. Many ideas from optimisation fit.</p>
 <p><strong>The bad</strong> One concern—there isn't necessarily one just loss landscape for a deep learning model. Do we mean the loss landscape defined by a single batch during training? In which case it changes at each step. Or that of the whole training dataset? In practice, then, we don't ever bother to really work out the gradient. Perhaps an infinite held-out validation dataset? So our gradients might be biased away from reality. (I would generally lump for the entire training dataset option, which gives a stable landscape with just some uncertainty about the gradient.)</p>
-<p>More important, when we talk about a landscape, we think about our familiar (2+1)D. The fact that deep learning models inhabit a larger parameter space, e.g. ($10^9$+1)D is significant. High-dimensional spaces don't behave like low-dimensional ones. Almost all of the volume of a high-dimensional hypersphere is contained in a small eggshell around its surface. And space is very well-connected as it becomes hard to put up a wall between two points.</p>
+<p>More important, when we talk about a landscape, we think about our familiar (2+1)D. The fact that deep learning models inhabit a larger parameter space, e.g. ($10^9$+1)D is significant. High-dimensional spaces don't behave like low-dimensional ones. Almost all of the volume of a high-dimensional hypersphere is contained in a thin eggshell around its surface. And space is very well-connected as it becomes hard to put up a wall between two points.</p>
 <p>This all means that our intuition is misleading. We imagine an optimiser taking a long hike down a twisting valley between impassable mountains. But perhaps it's more like a short-ish distance through a dizzying number of comparatively simple dimensions. They might form groups with different natural scales and have lots of symmetries.</p>
 <p><strong>Conclusion</strong> It's hard to dismiss the loss landscape metaphor. In a way it isn't really a metaphor—there really is an <code>n_parameter</code>-dimensional manifold in an <code>(n_parameter+1)</code>-dimensional space that represents the optimisation objective. The problem is that our intuition for this is pretty rubbish. So we should think about this with caution, testing our assumptions and resisting the urge to over-generalise our low-dimensional experience.</p>
 <p>As we step out into billions of nonphysical dimensions, we must acknowledge the loss of our spatial awareness. Even if it makes us dizzy.</p>
@@ -49,9 +52,9 @@
       <div class="row dd-footer">
         <div class="col">
           <p>
-            Note: All views or opinions expressed here are those of the author
-            at time of writing and do not represent those of any employer or
-            other organisation, past or present.
+            All views or opinions expressed here are those of the author at time
+            of writing and do not represent those of any employer or other
+            organisation, past or present.
           </p>
           <p>
             Please let me know of errors or missing references by

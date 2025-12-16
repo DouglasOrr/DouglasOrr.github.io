@@ -12,8 +12,11 @@
     <meta property="og:site_name" content="Doug's Diversions" />
     <meta property="og:title" content="Hash vs Sort">
 <meta property="og:image" content="/2019-09-hash-vs-sort/img/chart_total_items.png">
+
     <link rel="stylesheet" href="/css/lib.css" />
     <link rel="stylesheet" href="/css/custom.css" />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+
     <script type="text/javascript" src="/js/custom.js" defer></script>
     <script type="text/javascript" src="/js/lib.js" defer></script>
     <title>Hash vs Sort</title>
@@ -143,7 +146,8 @@ $$</p>
 <p>We saw that <em>sort-unique</em> scales faithfully as $O(N \log N)$, both in terms of number of logical / data operations and in runtime. <em>Hash-unique</em> also scales faithfully in number of logical / data operations, $O(N)$, but scales $O(N \log N)$ in runtime.</p>
 <p>This is because our complexity analysis ignored the effect of cache hierarchies on performance (it effectively employed a "flat cost" model for any random access to memory). This proved very unrealistic for <em>hash-unique</em> (even though the same model was OK for <em>sort-unique</em>). We don't propose a better model here, but it's a reminder to keep an eye on <a href="https://en.wikipedia.org/wiki/Locality_of_reference">locality of reference</a> when thinking about performance.</p>
 <p><em>Read on... <a href="../2019-09-hash-vs-sort-2/article.html">[Part 2]</a></em></p>
-<hr />
+<hr class="appendix-separator">
+
 <h2 id="appendix-benchmarking">Appendix - benchmarking</h2>
 <p><em>Note: this includes the setup for Part 2, which includes other programming languages.</em></p>
 <ul>
@@ -163,9 +167,9 @@ Java: OpenJDK 11.0.4</code></pre></div>
       <div class="row dd-footer">
         <div class="col">
           <p>
-            Note: All views or opinions expressed here are those of the author
-            at time of writing and do not represent those of any employer or
-            other organisation, past or present.
+            All views or opinions expressed here are those of the author at time
+            of writing and do not represent those of any employer or other
+            organisation, past or present.
           </p>
           <p>
             Please let me know of errors or missing references by
