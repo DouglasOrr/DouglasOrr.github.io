@@ -2,10 +2,12 @@ import argparse
 import glob
 import html
 import io
+import json
 import logging
 import os
 import re
 import shutil
+import sys
 import urllib.request
 from pathlib import Path
 
@@ -123,21 +125,73 @@ class RenderRule(Rule):
         self.template = template
         self.root = root
 
+    @classmethod
+    def _render_markdown(cls, source: str) -> tuple[str, dict[str, list[str]]]:
+        cls.MARKDOWN.reset()
+        html = cls.MARKDOWN.convert(source)
+        return html, cls.MARKDOWN.Meta
+
+    @classmethod
+    def _render_notebook(cls, source: str) -> tuple[str, dict[str, list[str]]]:
+        html = []
+        meta = {}
+        notebook = json.loads(source)
+        if (nbformat := notebook["nbformat"]) != 4:
+            print(
+                "Warning - this renderer was tested on nbformat:4,"
+                f" this notebook has: nbformat:{nbformat}",
+                file=sys.stderr,
+            )
+        for cell in notebook["cells"]:
+            if cell["cell_type"] == "markdown":
+                cls.MARKDOWN.reset()
+                html.append(cls.MARKDOWN.convert("".join(cell["source"])))
+                for key, value in cls.MARKDOWN.Meta.items():
+                    if key in meta:
+                        print(f"Warning - duplicate meta key: {key}", file=sys.stderr)
+                meta.update(cls.MARKDOWN.Meta)
+            for output in cell.get("outputs", []):
+                if output["output_type"] == "stream":
+                    if output["name"] != "stderr":
+                        html.append(f"<pre>{''.join(output['text'])}</pre>")
+                elif output["output_type"] == "display_data":
+                    if "image/png" in output["data"]:
+                        html.append(
+                            f'<img src="data:image/png;base64,{output["data"]["image/png"]}"/>'
+                        )
+                    else:
+                        print(
+                            "Warning - unhandled output_type: display_data mime types:"
+                            f" {list(output['data'].keys())}",
+                            file=sys.stderr,
+                        )
+                else:
+                    print(
+                        f"Warning - unhandled output_type: {output['output_type']}",
+                        file=sys.stderr,
+                    )
+        return "".join(html), meta
+
     def _build(self):
         self.MARKDOWN.reset()
         logging.info(f"render {self.source} => {self.target}")
         with open(self.template, encoding="utf-8") as template_f:
             template = template_f.read()
         with open(self.source, encoding="utf-8") as source_f:
-            body = self.MARKDOWN.convert(source_f.read())
-        title = " ".join(self.MARKDOWN.Meta["title"])
-        keywords = ",".join(self.MARKDOWN.Meta["keywords"])
+            contents = source_f.read()
+            if self.source.endswith(".md"):
+                body, meta = self._render_markdown(contents)
+            elif self.source.endswith(".ipynb"):
+                body, meta = self._render_notebook(contents)
+            else:
+                raise ValueError(f"Unsupported source type: {self.source}")
+        title = " ".join(meta["title"])
+        keywords = ",".join(meta["keywords"])
         og_meta = []
         og_meta.append(f'<meta property="og:title" content="{title}">')
-        if "image" in self.MARKDOWN.Meta:
-            src = self.MARKDOWN.Meta["image"][0]
+        if "image" in meta:
             src = (
-                Path(Path(self.target).parent, src)
+                Path(Path(self.target).parent, meta["image"][0])
                 .resolve()
                 .relative_to(Path(self.root).resolve())
             )
@@ -216,12 +270,15 @@ class Builder:
         )
 
     def _src_to_dest(self, src):
-        return os.path.join(self.dest_root, os.path.relpath(src, self.src_root))
+        return (
+            os.path.join(self.dest_root, os.path.relpath(src, self.src_root))
+            .replace(".md", ".html")
+            .replace(".ipynb", ".html")
+        )
 
     def _render_rule(self, src):
-        dest = self._src_to_dest(src).replace(".md", ".html")
         return RenderRule(
-            dest,
+            self._src_to_dest(src),
             src,
             template=os.path.join(self.src_root, self.SRC_TEMPLATE),
             root=self.dest_root,
@@ -235,12 +292,13 @@ class Builder:
         ext = os.path.splitext(src)[1]
         if ext in self.SRC_COPY:
             return {CopyRule(self._src_to_dest(src), src)}
-        if ext == ".md":
+        if ext == ".md" or ext == ".ipynb":
             return {self._render_rule(src)}
         if os.path.relpath(src, self.src_root) == self.SRC_TEMPLATE:
             return {
                 self._render_rule(src)
-                for src in glob.glob(f"{self.src_root}/**/*.md", recursive=True)
+                for ext in [".md", ".ipynb"]
+                for src in glob.glob(f"{self.src_root}/**/*{ext}", recursive=True)
             }
         raise self.Error(src, "missing build rule")
 
