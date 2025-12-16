@@ -129,9 +129,7 @@ For what it's worth, my takeaways:
 
 If we need to optimize to the maximum, we'll inevitably go full-custom anyway: compressing pointers and sizes, using [prefix trees](https://en.wikipedia.org/wiki/Trie), etc. But the STL gives us a few options in our standard toolkit before we have to go as far as that!
 
-<div style="height: 5em;"></div>
-
----
+<hr class="appendix-separator">
 
 ## Appendix - benchmarking notes
 

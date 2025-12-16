@@ -228,6 +228,31 @@ class DownloadRule(Rule):
             target_f.write(data)
 
 
+class DownloadFontsRule(Rule):
+    """Download fonts from the Google Fonts CDN (use the "embed code" link)."""
+
+    @staticmethod
+    def download_fonts(embed_url: str, out: Path) -> None:
+        out.mkdir(exist_ok=True)
+        user_agent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36"
+        request = urllib.request.Request(embed_url, headers={"User-Agent": user_agent})
+        code = urllib.request.urlopen(request).read().decode("utf-8")
+        for url in set(re.findall(r"url\((https://[^)]+)\)", code)):
+            *_, font, version, hashname = url.split("/")
+            name = f"{font}-{version}-{hashname}"
+            urllib.request.urlretrieve(url, out / name)
+            code = code.replace(url, name)
+        (out / "fonts.css").write_text(code)
+
+    def __init__(self, target, embed_url):
+        super().__init__(target)
+        self.embed_url = embed_url
+
+    def _build(self):
+        logging.info(f"download fonts {self.embed_url} => {self.target}")
+        self.download_fonts(self.embed_url, Path(self.target))
+
+
 class Builder:
     DEST_NOCLEAN = {".git", "README.md", "server.log", ".nojekyll"}
     DEST_LIBS = [
@@ -250,6 +275,7 @@ class Builder:
             ],
         ),
     ]
+    FONTS = "https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Jost:ital,wght@0,100..900;1,100..900&display=swap"
     SRC_TEMPLATE = "template.html"
     SRC_IGNORE = {".ipynb_checkpoints"}
     SRC_COPY = {".html", ".png", ".jpg", ".gif", ".svg", ".css", ".js"}
@@ -328,6 +354,8 @@ class Builder:
                     [source] if isinstance(source, str) else source,
                 )
             }
+        # Add font download rule
+        rules.add(DownloadFontsRule(os.path.join(self.dest_root, "fonts"), self.FONTS))
         # Run all the rules
         for rule in sorted(rules):
             rule.build_target()

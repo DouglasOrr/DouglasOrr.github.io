@@ -129,7 +129,7 @@ This is because our complexity analysis ignored the effect of cache hierarchies 
 
 _Read on... [\[Part 2\]](../2019-09-hash-vs-sort-2/article.md)_
 
----
+<hr class="appendix-separator">
 
 ## Appendix - benchmarking
 

@@ -122,9 +122,7 @@ Ultimately I believe Christianity and Bayesian are compatible, that both are con
 _...if that's you, one way to start is to read [John's Gospel](https://www.esv.org/John+1/) for yourself._
 </div>
 
-<div style="height:4em;"></div>
-
----
+<hr class="appendix-separator">
 
 ## Appendix: Bayesianism
 
