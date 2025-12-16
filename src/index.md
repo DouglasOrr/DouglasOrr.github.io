@@ -5,7 +5,7 @@ keywords: douglasorr
 
 My grab bag of various diversions/essays mostly about machine learning and software engineering, but some [other topics](#other) too.
 
-## ML/Software
+<div class="dd-category">Software Development & Machine Learning</div>
 
 2025.12 - [Five game jams: Lessons learned](2025-12-game-jams/article.html)
 
@@ -29,7 +29,7 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 2019.09 - [Finding unique items - hash vs sort? \[part 1\]](2019-09-hash-vs-sort/article.md) [\[part 2\]](2019-09-hash-vs-sort-2/article.md)
 
-## Other
+<div class="dd-category">Other</div>
 
 2025.10 - [My Worldview — Christian and Bayesian](2025-10-bayesian-christian/article.md)
 
