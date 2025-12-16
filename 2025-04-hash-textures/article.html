@@ -67,11 +67,10 @@
 
 <p>For the rest of this post, we'll try to unpick the function. If you'd prefer to play with it yourself, check out the <a href="hv.html">hash playground</a>.</p>
 <h2 id="the-idea">The idea</h2>
-<p>I was trying to make a game that obeyed a 2-bit colour palette. With a strict interpretation of the rules, this means no interpolation or antialiasing — the pixels onscreen should only be one of 4 colours. So I needed textures that could align perfectly to the screen. The not-at-all novel solution:</p>
-<p><em>Hash the (x, y) screen-space pixel coordinate, and use it to choose a colour.</em></p>
-<p>It turns out that this works fine, as long as the camera and viewports are fixed, and this very simple hash function is remarkably varied and interesting:</p>
+<p>I was trying to make a game that obeyed a 2-bit colour palette. With a strict interpretation of the rules, this means no interpolation or antialiasing — the pixels onscreen should only be one of 4 colours. So I needed textures that could align perfectly to the screen. The idea I ran with was to <strong>hash the (x, y) screen-space pixel coordinates</strong>, use this value to choose a colour.</p>
+<p>It turns out that this works fine, as long as the camera and viewports are fixed, and a simple hash function can be remarkably varied and interesting:</p>
 <p>$$(c_x \, x + c_y \, y + c_{xy} \, x \, y + c_{x^2} \, x^2 + c_{y^2} \, y^2) \,\mathrm{mod} \, m &lt; \tau \, m$$</p>
-<p>In Python, for example:</p>
+<p>In Python, for example (or see <a href="https://github.com/DouglasOrr/DouglasOrr.github.io/blob/examples/2025-04-hash-textures/textures.ipynb">notebook</a>):</p>
 <pre><code class="language-python">c_x, c_y, c_xy, c_xx, c_yy = 1, 1, 0, 1, 1
 m, t, w, h = 64, 0.5, 128, 128
 
