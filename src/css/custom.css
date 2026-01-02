@@ -38,15 +38,13 @@ blockquote {
   padding-left: 1.5em;
   color: #555;
 }
-code {
-  color: #333;
-}
 pre {
   font-size: 0.9rem !important;
 }
 code {
+  color: #333;
   font-family: "Inconsolata", monospace !important;
-  font-size: 1rem;
+  font-size: 1em;
   font-weight: 450;
 }
 
