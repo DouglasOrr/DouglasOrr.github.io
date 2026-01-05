@@ -50,7 +50,9 @@ def build(dev: bool, port: int = DEFUALT_PORT) -> None:
         server.root = "site_dev"
         server.watch("src/**/*")
         threading.Thread(
-            target=server.serve, kwargs=dict(port=port, open_url_delay=1), daemon=True
+            target=server.serve,
+            kwargs=dict(host="0.0.0.0", port=port, open_url_delay=1),
+            daemon=True,
         ).start()
         run("python", "tools/render.py", "src", "site_dev", "--dev")
     else:

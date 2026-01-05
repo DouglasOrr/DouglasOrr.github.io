@@ -1,4 +1,4 @@
-title: Procedural Textures with Hash Functions
+title: Procedural textures with hash functions
 keywords: graphics,maths,hash-functions
 image: img/preview.png
 description: A visual exploration of a family of 2D hash functions for procedural texturing, where a simple quadratic equation produces amazing variety as the parameters are varied.
@@ -33,9 +33,9 @@ description: A visual exploration of a family of 2D hash functions for procedura
 }
 </style>
 
-# Procedural Textures with Hash Functions
+# Procedural textures with hash functions
 
-and <a class="hv-title" href="./hv.html">Hash Playground</a>
+and <a class="pill" href="./hv.html">Hash Playground</a>
 
 I'm the sort of person who gets very excited when simple rules create complex behaviour. The other day, I needed a simple hash function that maps $(x, y)$ coordinates to a colour, and found a straightforward equation that ended up being astoundingly rich. Hence this post; to talk about and play with this function.
 
