@@ -271,14 +271,22 @@ class Builder:
             ]
             + [
                 f"https://cdn.jsdelivr.net/npm/prismjs@1.21.0/components/prism-{language}.js"
-                for language in ["clike", "javascript", "c", "cpp", "java", "python"]
+                for language in [
+                    "clike",
+                    "javascript",
+                    "c",
+                    "cpp",
+                    "java",
+                    "python",
+                    "typescript",
+                ]
             ],
         ),
     ]
     FONTS = "https://fonts.googleapis.com/css2?family=Inconsolata:wght@200..900&family=Jost:ital,wght@0,100..900;1,100..900&display=swap"
     SRC_TEMPLATE = "template.html"
-    SRC_IGNORE = {".ipynb_checkpoints"}
-    SRC_COPY = {".html", ".png", ".jpg", ".gif", ".svg", ".css", ".js"}
+    SRC_IGNORE = {".ipynb_checkpoints", "ext"}
+    SRC_COPY = {".html", ".png", ".jpg", ".gif", ".svg", ".mp4", ".css", ".js"}
 
     class Error(Exception):
         def __init__(self, path, description):
@@ -291,9 +299,11 @@ class Builder:
 
     def _check_ignore(self, path):
         parts = path.split(os.path.sep)
-        return any(part in self.SRC_IGNORE for part in parts) or parts[-1].startswith(
-            ".#"
-        )
+        if any(part in self.SRC_IGNORE for part in parts):
+            return True
+        if parts[-1].startswith(".#"):
+            return True
+        return False
 
     def _src_to_dest(self, src):
         return (

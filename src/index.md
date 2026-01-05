@@ -7,9 +7,11 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 <div class="dd-category">Software Development & Machine Learning</div>
 
+2026.01 - [Bouncing balls, for fun](2026-01-bouncing/article.html)
+
 2025.12 - [Five game jams: Lessons learned](2025-12-game-jams/article.html)
 
-2025.04 - [Procedural Textures with Hash Functions](2025-04-hash-textures/article.md)
+2025.04 - [Procedural textures with hash functions](2025-04-hash-textures/article.md)
 
 2024.10 - [Benchmarking `std::{string, string_view, reference_wrapper}`](2024-10-strings/article.md)
 
@@ -29,7 +31,7 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 2019.09 - [Finding unique items - hash vs sort? \[part 1\]](2019-09-hash-vs-sort/article.md) [\[part 2\]](2019-09-hash-vs-sort-2/article.md)
 
-<div class="dd-category">Other</div>
+<div class="dd-category" id="other">Other</div>
 
 2025.10 - [My Worldview — Christian and Bayesian](2025-10-bayesian-christian/article.md)
 
