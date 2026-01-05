@@ -10,7 +10,7 @@
     <meta name="keywords" content="graphics,maths,hash-functions" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="Doug's Diversions" />
-    <meta property="og:title" content="Procedural Textures with Hash Functions">
+    <meta property="og:title" content="Procedural textures with hash functions">
 <meta property="og:image" content="/2025-04-hash-textures/img/preview.png">
 <meta property="og:description" content="A visual exploration of a family of 2D hash functions for procedural texturing, where a simple quadratic equation produces amazing variety as the parameters are varied.">
 
@@ -20,7 +20,7 @@
 
     <script type="text/javascript" src="/js/custom.js" defer></script>
     <script type="text/javascript" src="/js/lib.js" defer></script>
-    <title>Procedural Textures with Hash Functions</title>
+    <title>Procedural textures with hash functions</title>
   </head>
 
   <body>
@@ -59,8 +59,8 @@
 }
 </style>
 
-<h1 id="procedural-textures-with-hash-functions">Procedural Textures with Hash Functions</h1>
-<p>and <a class="hv-title" href="./hv.html">Hash Playground</a></p>
+<h1 id="procedural-textures-with-hash-functions">Procedural textures with hash functions</h1>
+<p>and <a class="pill" href="./hv.html">Hash Playground</a></p>
 <p>I'm the sort of person who gets very excited when simple rules create complex behaviour. The other day, I needed a simple hash function that maps $(x, y)$ coordinates to a colour, and found a straightforward equation that ended up being astoundingly rich. Hence this post; to talk about and play with this function.</p>
 <p><strong>TL;DR: The boolean predicate $(c_x \, x + c_y \, y + c_{xy} \, x \, y + c_{x^2} \, x^2 + c_{y^2} \, y^2)$ $\mathrm{mod} \, m &lt; \tau \, m$, is richly varied and beautiful.</strong></p>
 <p>For example, varying $c_{xy}$ with the other parameters fixed:</p>
