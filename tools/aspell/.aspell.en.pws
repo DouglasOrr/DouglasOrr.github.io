@@ -1,19 +1,23 @@
-personal_ws-1.1 en 124 
+personal_ws-1.1 en 130 
 Autoregressive
 Avro
 Bayesianism
 Bayesians
 Bresenham's
 CIFAR
+CUDA
+ChatGPT
 Colab
 Einsum
 FFN
+FFT
 GELU
 GLU
 GPT
 GeGLU
 Gemma
 Gemma's
+Graphcore
 HDR
 KJV
 LLM
@@ -45,6 +49,8 @@ backpropagate
 backpropagation
 cdot
 chatbots
+codebase
+codepath
 composability
 composable
 contrastive

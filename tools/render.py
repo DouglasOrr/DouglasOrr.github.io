@@ -111,6 +111,7 @@ class RenderRule(Rule):
     MARKDOWN = markdown.Markdown(
         extensions=[
             DougsDiversionsExtension(),
+            "admonition",
             "meta",
             "tables",
             "toc",

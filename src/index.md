@@ -7,6 +7,8 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 <div class="dd-category">Software Development & Machine Learning</div>
 
+2026.03 - [Rely or Adopt — A pre-AI rule for the age of AI-assisted coding](2026-03-rely-or-adopt/article.md)
+
 2026.01 - [Bouncing balls, for fun](2026-01-bouncing/article.html)
 
 2025.12 - [Five game jams: Lessons learned](2025-12-game-jams/article.html)
