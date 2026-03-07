@@ -52,6 +52,13 @@ details {
   border: 0.5px solid #ccc;
   padding: 0.5em;
 }
+.table td,
+.table th {
+  padding: 0.4em;
+}
+details[open] > summary {
+  margin-bottom: 0.5em;
+}
 
 /* Special */
 a.subtle {
@@ -76,6 +83,27 @@ a.pill:hover {
 }
 .appendix-separator {
   margin-top: 4em;
+}
+
+/* Admonitions */
+.admonition {
+  margin: 1.25em 0;
+  padding: 0.9em 1.1em 0.95em;
+  border: 1px solid #ccc;
+  border-radius: 0.85rem;
+  background: #eaeaea;
+  font-size: 0.9em;
+}
+.admonition p {
+  margin-top: 0;
+}
+.admonition > :last-child {
+  margin-bottom: 0;
+}
+.admonition-title {
+  display: inline-block;
+  margin: 0 0 0.25em 0;
+  font-weight: bold;
 }
 
 /* Template layout */
