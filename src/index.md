@@ -35,6 +35,8 @@ My grab bag of various diversions/essays mostly about machine learning and softw
 
 <div class="dd-category" id="other">Other</div>
 
+2026.07 - [Looking for Meaning? Consider Death.](2026-07-ecclesiastes/article.md)
+
 2025.10 - [My Worldview — Christian and Bayesian](2025-10-bayesian-christian/article.md)
 
 2024.02 - [One {what} one vote](2024-02-one-vote/article.md)
